@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { UserPlus } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card } from '@/components/ui/Card'
@@ -32,13 +33,20 @@ export function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-full items-center justify-center bg-gradient-to-br from-slate-50 via-white to-brand-50 px-4 py-10">
-      <div className="w-full max-w-md">
+    <div className="relative flex min-h-full items-center justify-center overflow-hidden px-4 py-10">
+      <div className="pointer-events-none absolute inset-0 ambient-grid opacity-40" />
+      <div className="pointer-events-none absolute -left-10 top-20 h-64 w-64 rounded-full bg-brand-300/25 blur-3xl" />
+      <div className="pointer-events-none absolute -right-8 bottom-8 h-72 w-72 rounded-full bg-cyan-300/20 blur-3xl" />
+
+      <div className="relative w-full max-w-md">
         <div className="mb-6 text-center">
-          <h1 className="text-2xl font-semibold text-slate-900">患者注册</h1>
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 via-teal-500 to-cyan-600 text-white shadow-[0_12px_24px_-12px_rgba(13,148,136,0.8)]">
+            <UserPlus className="h-6 w-6" />
+          </div>
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-950">患者注册</h1>
           <p className="mt-1 text-sm text-slate-500">注册后可预约挂号并查看电子病历</p>
         </div>
-        <Card className="p-6">
+        <Card className="p-6 md:p-7">
           <form className="space-y-4" onSubmit={onSubmit}>
             <Input
               label="用户名"
@@ -70,7 +78,9 @@ export function RegisterPage() {
               required
             />
             {error ? (
-              <div className="rounded-2xl bg-rose-50 px-3 py-2 text-sm text-rose-600">{error}</div>
+              <div className="rounded-2xl border border-rose-100 bg-rose-50 px-3 py-2 text-sm text-rose-600">
+                {error}
+              </div>
             ) : null}
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? '提交中...' : '注册并登录'}
@@ -79,7 +89,7 @@ export function RegisterPage() {
         </Card>
         <p className="mt-5 text-center text-sm text-slate-500">
           已有账号？
-          <Link to="/login" className="ml-1 font-medium text-brand-700">
+          <Link to="/login" className="ml-1 font-semibold text-brand-700 hover:text-brand-800">
             去登录
           </Link>
         </p>

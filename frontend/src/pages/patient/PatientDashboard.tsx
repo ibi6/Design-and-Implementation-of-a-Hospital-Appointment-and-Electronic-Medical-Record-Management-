@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { CalendarDays, FileText, Stethoscope } from 'lucide-react'
+import { ArrowRight, CalendarDays, FileText, Stethoscope } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import * as api from '@/services/api'
 import type { AppointmentView } from '@/types'
@@ -49,9 +49,30 @@ export function PatientDashboard() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-semibold text-slate-900">你好，{user?.realName}</h2>
-        <p className="mt-1 text-sm text-slate-500">今天也要照顾好自己。需要看病可以直接预约号源。</p>
+      <div className="relative overflow-hidden rounded-[1.75rem] border border-brand-100/80 bg-gradient-to-r from-brand-600 via-teal-600 to-cyan-600 p-6 text-white shadow-[0_20px_40px_-24px_rgba(13,148,136,0.7)] md:p-7">
+        <div className="pointer-events-none absolute -right-8 -top-10 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
+        <div className="relative">
+          <div className="text-sm text-teal-50/90">患者工作台</div>
+          <h2 className="mt-1 text-2xl font-semibold tracking-tight md:text-3xl">
+            你好，{user?.realName}
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-teal-50/90">
+            今天也要照顾好自己。需要看病可以直接预约号源，就诊完成后可随时查看电子病历。
+          </p>
+          <div className="mt-5 flex flex-wrap gap-3">
+            <Link to="/patient/departments">
+              <Button className="bg-white text-brand-800 hover:bg-brand-50">
+                立即挂号
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+            <Link to="/patient/records">
+              <Button variant="secondary" className="border-white/30 bg-white/10 text-white hover:bg-white/20">
+                我的病历
+              </Button>
+            </Link>
+          </div>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
@@ -80,7 +101,8 @@ export function PatientDashboard() {
 
       <div className="grid gap-4 md:grid-cols-2">
         <Card className="p-6">
-          <h3 className="font-semibold text-slate-900">快捷操作</h3>
+          <h3 className="font-semibold tracking-tight text-slate-950">快捷操作</h3>
+          <p className="mt-1 text-sm text-slate-500">常用入口，一键直达</p>
           <div className="mt-4 flex flex-wrap gap-3">
             <Link to="/patient/departments">
               <Button>按科室挂号</Button>
@@ -94,11 +116,20 @@ export function PatientDashboard() {
           </div>
         </Card>
         <Card className="p-6">
-          <h3 className="font-semibold text-slate-900">就诊提示</h3>
-          <ul className="mt-3 space-y-2 text-sm text-slate-500">
-            <li>· 请提前 15 分钟到院签到</li>
-            <li>· 待就诊预约可在线取消</li>
-            <li>· 就诊完成后可在「我的病历」查看详情</li>
+          <h3 className="font-semibold tracking-tight text-slate-950">就诊提示</h3>
+          <ul className="mt-3 space-y-2.5 text-sm leading-6 text-slate-500">
+            <li className="flex gap-2">
+              <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-500" />
+              请提前 15 分钟到院签到
+            </li>
+            <li className="flex gap-2">
+              <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-500" />
+              待就诊预约可在线取消
+            </li>
+            <li className="flex gap-2">
+              <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-500" />
+              就诊完成后可在「我的病历」查看详情
+            </li>
           </ul>
         </Card>
       </div>
@@ -131,7 +162,7 @@ export function PatientDashboard() {
               {recent.map((a) => (
                 <div
                   key={a.id}
-                  className="flex flex-col gap-3 rounded-2xl border border-slate-100 bg-slate-50/60 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+                  className="flex flex-col gap-3 rounded-2xl border border-slate-100 bg-gradient-to-r from-slate-50/80 to-white px-4 py-3.5 shadow-sm transition hover:border-brand-100 hover:shadow-md sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div>
                     <div className="font-medium text-slate-900">

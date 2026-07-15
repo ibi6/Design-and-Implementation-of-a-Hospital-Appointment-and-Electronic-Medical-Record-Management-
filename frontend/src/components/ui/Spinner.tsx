@@ -4,7 +4,7 @@ export function Spinner({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        'h-8 w-8 animate-spin rounded-full border-2 border-brand-200 border-t-brand-600',
+        'h-8 w-8 animate-spin rounded-full border-2 border-brand-100 border-t-brand-600 shadow-[0_0_0_4px_rgba(13,148,136,0.06)]',
         className,
       )}
       role="status"
@@ -15,9 +15,9 @@ export function Spinner({ className }: { className?: string }) {
 
 export function PageLoading({ label = '加载中...' }: { label?: string }) {
   return (
-    <div className="flex min-h-[240px] flex-col items-center justify-center gap-3 text-sm text-slate-500">
+    <div className="flex min-h-[280px] flex-col items-center justify-center gap-4 text-sm text-slate-500">
       <Spinner />
-      <span>{label}</span>
+      <span className="font-medium tracking-tight">{label}</span>
     </div>
   )
 }
