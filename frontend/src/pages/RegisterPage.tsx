@@ -1,17 +1,9 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Activity } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { Card } from '@/components/ui/Card'
 import { useAuth } from '@/context/AuthContext'
-
-function friendlyError(err: unknown) {
-  const msg = err instanceof Error ? err.message : '注册失败'
-  if (/failed to fetch|networkerror|load failed|fetch/i.test(msg)) {
-    return '无法连接服务器，请先启动后端（8080）'
-  }
-  return msg || '注册失败，请稍后重试'
-}
 
 export function RegisterPage() {
   const { register } = useAuth()
@@ -33,24 +25,20 @@ export function RegisterPage() {
       await register(form)
       navigate('/patient', { replace: true })
     } catch (err) {
-      setError(friendlyError(err))
+      setError(err instanceof Error ? err.message : '注册失败')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="flex min-h-full items-center justify-center bg-[#f4f7f8] px-4 py-12">
-      <div className="w-full max-w-[400px]">
-        <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#0f766e] text-white shadow-sm">
-            <Activity className="h-6 w-6" />
-          </div>
-          <h1 className="text-[28px] font-semibold tracking-tight text-slate-900">患者注册</h1>
-          <p className="mt-2 text-sm text-slate-500">注册后可预约挂号并查看电子病历</p>
+    <div className="flex min-h-full items-center justify-center bg-gradient-to-br from-slate-50 via-white to-brand-50 px-4 py-10">
+      <div className="w-full max-w-md">
+        <div className="mb-6 text-center">
+          <h1 className="text-2xl font-semibold text-slate-900">患者注册</h1>
+          <p className="mt-1 text-sm text-slate-500">注册后可预约挂号并查看电子病历</p>
         </div>
-
-        <div className="rounded-3xl border border-slate-200/80 bg-white p-7 shadow-[0_8px_30px_rgba(15,23,42,0.06)]">
+        <Card className="p-6">
           <form className="space-y-4" onSubmit={onSubmit}>
             <Input
               label="用户名"
@@ -81,20 +69,17 @@ export function RegisterPage() {
               placeholder="至少 6 位"
               required
             />
-
             {error ? (
-              <div className="rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-600">{error}</div>
+              <div className="rounded-2xl bg-rose-50 px-3 py-2 text-sm text-rose-600">{error}</div>
             ) : null}
-
-            <Button type="submit" className="h-11 w-full" disabled={loading}>
+            <Button type="submit" className="w-full" disabled={loading}>
               {loading ? '提交中...' : '注册并登录'}
             </Button>
           </form>
-        </div>
-
-        <p className="mt-6 text-center text-sm text-slate-500">
+        </Card>
+        <p className="mt-5 text-center text-sm text-slate-500">
           已有账号？
-          <Link to="/login" className="ml-1 font-medium text-[#0f766e] hover:underline">
+          <Link to="/login" className="ml-1 font-medium text-brand-700">
             去登录
           </Link>
         </p>
