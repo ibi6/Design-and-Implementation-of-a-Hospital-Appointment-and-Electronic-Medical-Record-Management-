@@ -1,0 +1,26 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:hospital_test;MODE=MySQL;DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+      encoding: UTF-8
+      continue-on-error: true
+  h2:
+    console:
+      enabled: false
+
+app:
+  jwt:
+    secret: test-only-jwt-secret-key-not-for-production-use
+    expire-hours: 2
+  cors-origins: http://localhost:5173
+
+logging:
+  level:
+    root: WARN
+    com.hospital: INFO
