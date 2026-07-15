@@ -1,117 +1,282 @@
-# Hospital Appointment & Electronic Medical Record System
+<div align="center">
 
-Hospital appointment registration and electronic medical record (EMR) management system built with **Spring Boot** + **React** (frontend/backend separation).
+# 🏥 慧医通 · Hospital Appointment & EMR
 
-> Chinese product name used in the UI: **慧医通**
+### Design and Implementation of a Hospital Appointment Registration & Electronic Medical Record Management System
 
-## Features
+**Spring Boot 3 · React · JWT · MyBatis-Plus · H2 / MySQL**
 
-- **Patient**: register/login, browse departments/doctors, book/cancel appointments, view EMR
-- **Doctor**: consultation list, write medical records, schedules, history records
-- **Admin**: dashboard, department/doctor/schedule/appointment/user management
+[![Java](https://img.shields.io/badge/Java-21-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)](https://openjdk.org/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](./LICENSE)
 
-## Tech Stack
+<p align="center">
+  <a href="#-features">Features</a> ·
+  <a href="#-screenshots">Screenshots</a> ·
+  <a href="#-architecture">Architecture</a> ·
+  <a href="#-quick-start">Quick Start</a> ·
+  <a href="#-api-overview">API</a> ·
+  <a href="#-demo-accounts">Demo</a>
+</p>
 
-| Layer | Stack |
-|-------|--------|
-| Frontend | React + Vite + TypeScript + Tailwind CSS |
-| Backend | Spring Boot 3 + Spring Security + JWT + MyBatis-Plus |
-| Database | H2 (default file DB) / optional MySQL 8 via Docker |
+<img src="docs/assets/login.png" alt="Login" width="88%" />
 
-## Quick Start (H2, recommended)
+<sub>Full-stack hospital workflow: appointment booking → doctor consultation → electronic medical records → admin operations</sub>
 
-Requirements: **JDK 21+**, **Node.js 18+**, **Maven**.
+</div>
+
+---
+
+## ✨ Why this project
+
+Most student “hospital systems” stop at CRUD forms.  
+This project ships a **runnable product loop**:
+
+| Capability | What you get |
+|---|---|
+| 🔐 Real auth | Spring Security + JWT + role isolation |
+| 📅 Real booking | Quota reserve / release with status machine |
+| 📝 Real EMR | Appointment → medical record (1:1) |
+| 🎛️ Three portals | Patient / Doctor / Admin in one SPA |
+| 🐳 Deploy options | H2 zero-deps demo **or** MySQL + Docker |
+| ✅ Tests | Integration tests for core API paths |
+
+---
+
+## 🧩 Features
+
+### Patient
+- Register / login
+- Browse departments & doctors
+- Book / cancel appointments
+- View personal electronic medical records
+
+### Doctor
+- Consultation workbench
+- Write structured EMR (complaint, diagnosis, treatment, prescription)
+- View schedules & history records
+
+### Admin
+- KPI dashboard
+- Department / doctor / schedule CRUD
+- Appointment & user management
+
+### Engineering
+- Unified API response `{ code, message, data }`
+- Global exception handling
+- Seed data for instant demo
+- Swagger UI
+- Env-based secrets (`.env.example`)
+
+---
+
+## 🖼️ Screenshots
+
+| Patient Dashboard | Book Appointment |
+|:---:|:---:|
+| <img src="docs/assets/patient-dashboard.png" width="100%" /> | <img src="docs/assets/appointment.png" width="100%" /> |
+| **My Appointments** | **Doctor EMR** |
+| <img src="docs/assets/my-appointments.png" width="100%" /> | <img src="docs/assets/doctor-emr.png" width="100%" /> |
+| **Record Detail** | **Admin Dashboard** |
+| <img src="docs/assets/record-detail.png" width="100%" /> | <img src="docs/assets/admin-dashboard.png" width="100%" /> |
+
+---
+
+## 🏗 Architecture
+
+```text
+┌──────────────────────┐      HTTPS/JSON       ┌──────────────────────────┐
+│  React SPA (Vite)    │ ───────────────────▶ │  Spring Boot 3 API       │
+│  Patient/Doctor/Admin│ ◀─────────────────── │  Security + JWT          │
+└──────────────────────┘                      │  MyBatis-Plus Services   │
+                                              └────────────┬─────────────┘
+                                                           │
+                                              ┌────────────▼─────────────┐
+                                              │  H2 (default) / MySQL 8  │
+                                              └──────────────────────────┘
+```
+
+<div align="center">
+  <img src="docs/assets/architecture.png" alt="Architecture" width="86%" />
+  <br/>
+  <img src="docs/assets/flow.png" alt="Appointment flow" width="86%" />
+</div>
+
+### Tech Stack
+
+| Layer | Technology |
+|------|------------|
+| Frontend | React 18, TypeScript, Vite, Tailwind CSS, React Router, lucide-react |
+| Backend | Spring Boot 3, Spring Security, JWT, Validation, springdoc OpenAPI |
+| Persistence | MyBatis-Plus, H2 file DB (default), MySQL 8 (optional) |
+| Ops | Docker Compose (MySQL), PowerShell start scripts |
+
+---
+
+## 🚀 Quick Start
+
+### Requirements
+- **JDK 21+**
+- **Node.js 18+**
+- **Maven 3.9+**
+
+### 1) Backend
 
 ```bash
-# Terminal 1 — backend
 cd backend
 mvn -DskipTests package
 java -jar target/hospital-backend-1.0.0.jar
+```
 
-# Terminal 2 — frontend
+- API: http://localhost:8080  
+- Swagger: http://localhost:8080/swagger-ui.html  
+
+### 2) Frontend
+
+```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-Windows helper scripts (optional):
+- App: http://localhost:5173  
+
+### Windows one-liners
 
 ```powershell
 powershell -File scripts/start-backend.ps1
 powershell -File scripts/start-frontend.ps1
 ```
 
-- Frontend: http://localhost:5173
-- Backend API: http://localhost:8080
-- Swagger UI: http://localhost:8080/swagger-ui.html
-
-## Optional: MySQL + Docker
+### Optional: MySQL + Docker
 
 ```powershell
 powershell -File scripts/start-mysql.ps1
 powershell -File scripts/start-backend.ps1 mysql
-powershell -File scripts/start-frontend.ps1
 ```
 
-Default local MySQL (change in production):
+> Configure secrets via environment variables. See [`.env.example`](./.env.example).
 
-- Host: `localhost:3306`
-- Database: `hospital`
-- User/password: configure via env (see `.env.example`)
+---
 
-## Demo Accounts
+## 👤 Demo Accounts
 
 | Username | Password | Role |
 |----------|----------|------|
-| patient | 123456 | Patient |
-| doctor | 123456 | Doctor |
-| admin | 123456 | Admin |
+| `patient` | `123456` | Patient |
+| `doctor` | `123456` | Doctor |
+| `admin` | `123456` | Admin |
 
-> Demo credentials only. Change passwords before any real deployment.
+> Demo only. Change credentials before any production use.
 
-## Suggested Demo Flow
+### 3-minute demo path
 
-1. Login as `patient` → choose department/doctor → book appointment
-2. Login as `doctor` → open consultation list → write EMR
-3. Login as `patient` again → view medical record
-4. Login as `admin` → open dashboard and management pages
+1. Login as **patient** → book an appointment  
+2. Login as **doctor** → write EMR and complete visit  
+3. Login as **patient** → open medical record  
+4. Login as **admin** → check dashboard & management pages  
 
-More detail: `docs/DEFENSE_DEMO.md`
+---
 
-## Configuration / Secrets
+## 🔌 API Overview
 
-Do **not** commit real secrets. Copy `.env.example` and override:
+Base path: `/api`
 
-| Variable | Purpose |
-|----------|---------|
-| `APP_JWT_SECRET` | JWT signing key (use a long random string) |
-| `APP_CORS_ORIGINS` | Allowed frontend origins |
-| `SPRING_DATASOURCE_*` | Database URL/username/password |
+| Module | Endpoints (selected) |
+|--------|----------------------|
+| Auth | `POST /auth/login` `POST /auth/register` `GET /auth/me` |
+| Departments | `GET/POST/PUT /departments` |
+| Doctors | `GET/POST/PUT /doctors` |
+| Schedules | `GET/POST/PUT /schedules` |
+| Appointments | `GET/POST /appointments` `POST /appointments/{id}/cancel` |
+| Records | `GET/POST /records` `GET /records/by-appointment/{id}` |
+| Users | `GET /users` `PUT /users/{id}/status` |
+| Stats | `GET /stats/overview` |
 
-Default config uses local/dev-friendly values only.
+Auth header:
 
-## Project Structure
-
-```text
-.
-├── backend/          # Spring Boot API
-├── frontend/         # React SPA
-├── docs/             # Design notes, demo script, screenshots
-├── docker/           # MySQL init SQL
-├── scripts/          # Local start helpers
-├── docker-compose.yml
-└── README.md
+```http
+Authorization: Bearer <jwt>
 ```
 
-## Tests
+---
+
+## 🧪 Tests
 
 ```bash
 cd backend
 mvn test
 ```
 
-Core API integration tests cover login, authorization, data isolation, appointment→EMR flow, and admin stats.
+Core coverage:
+- login success / failure  
+- role-based access denial  
+- patient data isolation  
+- appointment → EMR completion  
+- admin stats  
 
-## License
+---
 
-For educational / demo purposes. Add a license file if you redistribute commercially.
+## 📁 Project Structure
+
+```text
+.
+├── backend/                 # Spring Boot API
+│   ├── src/main/java/com/hospital/
+│   │   ├── controller/      # REST endpoints
+│   │   ├── service/         # Business logic & isolation
+│   │   ├── security/        # JWT + Spring Security
+│   │   ├── entity/ mapper/  # Domain & persistence
+│   │   └── config/          # Schema init + seed data
+│   └── src/test/            # Integration tests
+├── frontend/                # React SPA
+│   └── src/
+│       ├── pages/           # patient / doctor / admin portals
+│       ├── components/      # UI + layout
+│       ├── services/        # API client
+│       └── context/         # Auth state
+├── docs/                    # Specs, demo guide, screenshots
+├── docker/                  # MySQL init SQL
+├── scripts/                 # Local start helpers
+├── docker-compose.yml
+└── README.md
+```
+
+---
+
+## 🔐 Security Notes
+
+- Passwords stored with **BCrypt**
+- Stateless **JWT** authentication
+- Role guards on frontend routes & backend APIs
+- Patients/doctors restricted to own data at service layer
+- Secrets externalized (`APP_JWT_SECRET`, datasource envs)
+
+---
+
+## 🗺 Roadmap
+
+- [ ] Payment / insurance modules  
+- [ ] SMS / email notifications  
+- [ ] Queue / call-number system  
+- [ ] Full-stack Docker Compose (frontend + backend + MySQL)  
+- [ ] CI pipeline (build + test)
+
+---
+
+## 📄 License
+
+MIT — see [LICENSE](./LICENSE).
+
+---
+
+<div align="center">
+
+**If this project helps you, consider giving it a ⭐**
+
+Built with Spring Boot & React · Ready for demo · Open for learning
+
+</div>
