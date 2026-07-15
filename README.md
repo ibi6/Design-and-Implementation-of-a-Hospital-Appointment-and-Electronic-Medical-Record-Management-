@@ -2,16 +2,30 @@
 
 # 🏥 慧医通 · Hospital Appointment & EMR
 
-### Design and Implementation of a Hospital Appointment Registration & Electronic Medical Record Management System
+### Design and Implementation of a Hospital Appointment Registration  
+### & Electronic Medical Record Management System
 
 **Spring Boot 3 · React · JWT · MyBatis-Plus · H2 / MySQL**
 
-[![Java](https://img.shields.io/badge/Java-21-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)](https://openjdk.org/)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
-[![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](./LICENSE)
+<p>
+  <a href="./README.md">English</a> ·
+  <a href="./README.zh-CN.md">简体中文</a>
+</p>
+
+<p>
+  <img alt="GitHub stars" src="https://img.shields.io/github/stars/ibi6/Design-and-Implementation-of-a-Hospital-Appointment-and-Electronic-Medical-Record-Management-?style=for-the-badge&logo=github" />
+  <img alt="GitHub forks" src="https://img.shields.io/github/forks/ibi6/Design-and-Implementation-of-a-Hospital-Appointment-and-Electronic-Medical-Record-Management-?style=for-the-badge&logo=github" />
+  <img alt="GitHub last commit" src="https://img.shields.io/github/last-commit/ibi6/Design-and-Implementation-of-a-Hospital-Appointment-and-Electronic-Medical-Record-Management-?style=for-the-badge" />
+</p>
+
+<p>
+  <img alt="Java" src="https://img.shields.io/badge/Java-21-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white" />
+  <img alt="Spring Boot" src="https://img.shields.io/badge/Spring%20Boot-3.3-6DB33F?style=for-the-badge&logo=springboot&logoColor=white" />
+  <img alt="React" src="https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black" />
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white" />
+  <img alt="Tailwind" src="https://img.shields.io/badge/Tailwind-4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" />
+  <img alt="License" src="https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge" />
+</p>
 
 <p align="center">
   <a href="#-features">Features</a> ·
@@ -21,6 +35,10 @@
   <a href="#-api-overview">API</a> ·
   <a href="#-demo-accounts">Demo</a>
 </p>
+
+<img src="docs/assets/social-preview.png" alt="Project banner" width="92%" />
+
+<br/>
 
 <img src="docs/assets/login.png" alt="Login" width="88%" />
 
@@ -278,5 +296,7 @@ MIT — see [LICENSE](./LICENSE).
 **If this project helps you, consider giving it a ⭐**
 
 Built with Spring Boot & React · Ready for demo · Open for learning
+
+[English](./README.md) · [简体中文](./README.zh-CN.md)
 
 </div>
