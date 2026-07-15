@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Activity, ArrowRight, CalendarCheck2, FileHeart, ShieldCheck, UserPlus } from 'lucide-react'
+import { Activity, ArrowRight, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { useAuth } from '@/context/AuthContext'
@@ -40,135 +40,88 @@ export function RegisterPage() {
   }
 
   return (
-    <div className="min-h-full lg:grid lg:grid-cols-2">
-      <section className="relative hidden overflow-hidden bg-gradient-to-br from-slate-950 via-brand-900 to-cyan-800 lg:flex lg:flex-col lg:justify-between">
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute left-10 top-16 h-64 w-64 rounded-full bg-teal-300/20 blur-3xl" />
-          <div className="absolute bottom-0 right-0 h-80 w-80 rounded-full bg-sky-300/15 blur-3xl" />
+    <div className="auth-stage relative flex min-h-full items-center justify-center overflow-hidden px-4 py-10 sm:px-6">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_15%_15%,#0f766e_0%,transparent_42%),radial-gradient(ellipse_at_85%_20%,#0369a1_0%,transparent_40%),linear-gradient(150deg,#042f2e_0%,#0c4a6e_100%)]" />
+        <div className="absolute inset-0 opacity-[0.12] [background-image:radial-gradient(rgba(255,255,255,0.55)_1px,transparent_1px)] [background-size:26px_26px]" />
+        <div className="auth-orb auth-orb-a" />
+        <div className="auth-orb auth-orb-b" />
+      </div>
+
+      <div className="auth-card-in relative z-10 w-full max-w-[440px]">
+        <div className="mb-7 text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-[1.25rem] bg-white/15 text-white shadow-[0_12px_40px_-12px_rgba(45,212,191,0.7)] ring-1 ring-white/30 backdrop-blur">
+            <Activity className="h-7 w-7" />
+          </div>
+          <h1 className="text-3xl font-semibold tracking-tight text-white">创建就诊账户</h1>
+          <p className="mt-2 text-sm text-teal-50/85">约 30 秒完成注册，立即预约医生</p>
         </div>
 
-        <div className="relative z-10 px-12 pt-12">
-          <div className="inline-flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 text-white ring-1 ring-white/25">
-              <Activity className="h-6 w-6" />
-            </div>
-            <div>
-              <div className="text-lg font-semibold text-white">慧医通</div>
-              <div className="text-xs text-teal-100/80">创建你的就诊账户</div>
-            </div>
+        <div className="rounded-[1.85rem] border border-white/35 bg-white/85 p-6 shadow-[0_30px_80px_-28px_rgba(2,20,30,0.65)] backdrop-blur-2xl md:p-8">
+          <div className="mb-5 flex items-center justify-center gap-2 text-xs font-semibold text-brand-700">
+            <Sparkles className="h-3.5 w-3.5" />
+            患者专属通道
           </div>
 
-          <h1 className="mt-14 max-w-md text-4xl font-semibold leading-tight tracking-tight text-white">
-            注册患者账号
-            <br />
-            开启便捷就医
-          </h1>
-          <p className="mt-5 max-w-md text-sm leading-7 text-teal-50/85">
-            注册后即可在线预约医生、查看就诊进度与电子病历，流程简单，信息安全。
-          </p>
+          <form className="space-y-4" onSubmit={onSubmit}>
+            <Input
+              label="用户名"
+              value={form.username}
+              onChange={(e) => setForm({ ...form, username: e.target.value })}
+              placeholder="用于登录，建议英文/数字"
+              required
+            />
+            <Input
+              label="真实姓名"
+              value={form.realName}
+              onChange={(e) => setForm({ ...form, realName: e.target.value })}
+              placeholder="就诊人姓名"
+              required
+            />
+            <Input
+              label="手机号"
+              value={form.phone}
+              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              placeholder="11 位手机号"
+              required
+            />
+            <Input
+              label="密码"
+              type="password"
+              value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+              placeholder="至少 6 位"
+              required
+            />
 
-          <div className="mt-10 space-y-3">
-            {[
-              { icon: CalendarCheck2, t: '随时预约心仪医生' },
-              { icon: FileHeart, t: '就诊后自动生成病历' },
-              { icon: ShieldCheck, t: '个人信息严格权限保护' },
-            ].map((item) => (
-              <div
-                key={item.t}
-                className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white/95 backdrop-blur"
-              >
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15">
-                  <item.icon className="h-4 w-4" />
-                </span>
-                {item.t}
+            {error ? (
+              <div className="auth-shake rounded-2xl border border-rose-100 bg-rose-50 px-3.5 py-2.5 text-sm leading-6 text-rose-600">
+                {error}
               </div>
-            ))}
-          </div>
-        </div>
+            ) : (
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs leading-5 text-slate-500">
+                注册成功后将自动进入患者工作台
+              </div>
+            )}
 
-        <div className="relative z-10 px-12 pb-12">
-          <div className="max-w-sm rounded-3xl border border-white/15 bg-white/10 p-5 text-sm leading-6 text-teal-50/90 backdrop-blur">
-            已有账号？可直接登录患者端，演示环境也支持使用预置账号快速体验。
-          </div>
-        </div>
-      </section>
+            <Button
+              type="submit"
+              className="h-12 w-full text-base shadow-[0_14px_30px_-14px_rgba(13,148,136,0.9)] transition hover:translate-y-[-1px]"
+              disabled={loading}
+            >
+              {loading ? '创建中…' : '注册并进入'}
+              {!loading ? <ArrowRight className="h-4 w-4" /> : null}
+            </Button>
+          </form>
 
-      <section className="relative flex items-center justify-center px-4 py-10 sm:px-8">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(204,251,241,0.4),transparent_45%)] lg:hidden" />
-
-        <div className="relative w-full max-w-[440px]">
-          <div className="mb-8 flex items-center gap-3 lg:hidden">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-teal-600 text-white shadow-lg">
-              <UserPlus className="h-5 w-5" />
-            </div>
-            <div>
-              <div className="font-semibold text-slate-950">患者注册</div>
-              <div className="text-xs text-slate-500">创建就诊账户</div>
-            </div>
-          </div>
-
-          <div className="mb-6">
-            <h2 className="text-3xl font-semibold tracking-tight text-slate-950">创建账户</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-500">填写基本信息，约 30 秒完成注册</p>
-          </div>
-
-          <div className="rounded-[1.75rem] border border-slate-200/80 bg-white/90 p-6 shadow-[0_20px_50px_-28px_rgba(15,23,42,0.35)] backdrop-blur md:p-7">
-            <form className="space-y-4" onSubmit={onSubmit}>
-              <Input
-                label="用户名"
-                value={form.username}
-                onChange={(e) => setForm({ ...form, username: e.target.value })}
-                placeholder="用于登录，建议英文/数字"
-                required
-              />
-              <Input
-                label="真实姓名"
-                value={form.realName}
-                onChange={(e) => setForm({ ...form, realName: e.target.value })}
-                placeholder="就诊人姓名"
-                required
-              />
-              <Input
-                label="手机号"
-                value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                placeholder="11 位手机号"
-                required
-              />
-              <Input
-                label="密码"
-                type="password"
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                placeholder="至少 6 位"
-                required
-              />
-
-              {error ? (
-                <div className="rounded-2xl border border-rose-100 bg-rose-50 px-3.5 py-2.5 text-sm leading-6 text-rose-600">
-                  {error}
-                </div>
-              ) : (
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs leading-5 text-slate-500">
-                  注册后将自动登录并进入患者工作台
-                </div>
-              )}
-
-              <Button type="submit" className="h-12 w-full text-base" disabled={loading}>
-                {loading ? '创建中…' : '注册并进入'}
-                {!loading ? <ArrowRight className="h-4 w-4" /> : null}
-              </Button>
-            </form>
-          </div>
-
-          <p className="mt-6 text-center text-sm text-slate-500">
+          <p className="mt-5 text-center text-sm text-slate-500">
             已有账号？
             <Link to="/login" className="ml-1 font-semibold text-brand-700 hover:text-brand-800">
               去登录
             </Link>
           </p>
         </div>
-      </section>
+      </div>
     </div>
   )
 }
