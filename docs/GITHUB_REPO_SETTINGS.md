@@ -1,7 +1,7 @@
 # GitHub 仓库门面设置（30 秒）
 
-仓库：  
-https://github.com/ibi6/Design-and-Implementation-of-a-Hospital-Appointment-and-Electronic-Medical-Record-Management-
+仓库：
+https://github.com/ibi6/Hospital
 
 ## 1) About 描述
 

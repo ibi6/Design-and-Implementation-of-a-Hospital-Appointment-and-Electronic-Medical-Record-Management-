@@ -13,9 +13,9 @@
 </p>
 
 <p>
-  <img alt="GitHub stars" src="https://img.shields.io/github/stars/ibi6/Design-and-Implementation-of-a-Hospital-Appointment-and-Electronic-Medical-Record-Management-?style=for-the-badge&logo=github" />
-  <img alt="GitHub forks" src="https://img.shields.io/github/forks/ibi6/Design-and-Implementation-of-a-Hospital-Appointment-and-Electronic-Medical-Record-Management-?style=for-the-badge&logo=github" />
-  <img alt="GitHub last commit" src="https://img.shields.io/github/last-commit/ibi6/Design-and-Implementation-of-a-Hospital-Appointment-and-Electronic-Medical-Record-Management-?style=for-the-badge" />
+  <img alt="GitHub stars" src="https://img.shields.io/github/stars/ibi6/Hospital?style=for-the-badge&logo=github" />
+  <img alt="GitHub forks" src="https://img.shields.io/github/forks/ibi6/Hospital?style=for-the-badge&logo=github" />
+  <img alt="GitHub last commit" src="https://img.shields.io/github/last-commit/ibi6/Hospital?style=for-the-badge" />
 </p>
 
 <p>
