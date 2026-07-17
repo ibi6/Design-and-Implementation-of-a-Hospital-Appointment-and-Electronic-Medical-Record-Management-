@@ -38,4 +38,4 @@ npm run build
 - 医生：工作台、接诊、病历书写、排班、历史病历。
 - 管理员：数据看板、科室、医生、排班、预约和用户管理。
 
-完整启动与部署流程见根目录 [README.zh-CN.md](../README.zh-CN.md) 和 [docs/DEPLOYMENT.md](../docs/DEPLOYMENT.md)。
+完整启动与部署流程见根目录 [README.md](../README.md) 和 [docs/DEPLOYMENT.md](../docs/DEPLOYMENT.md)。

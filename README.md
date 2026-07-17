@@ -1,16 +1,10 @@
 <div align="center">
 
-# 🏥 慧医通 · Hospital Appointment & EMR
+# 🏥 慧医通 · 医院预约挂号与电子病历系统
 
-### Design and Implementation of a Hospital Appointment Registration  
-### & Electronic Medical Record Management System
+### 患者预约 · 医生接诊 · 电子病历 · 后台管理
 
 **Spring Boot 3 · React 19 · HttpOnly JWT Cookie · MyBatis-Plus · H2 / MySQL**
-
-<p>
-  <a href="./README.md">English</a> ·
-  <a href="./README.zh-CN.md">简体中文</a>
-</p>
 
 <p>
   <img alt="GitHub stars" src="https://img.shields.io/github/stars/ibi6/Hospital?style=for-the-badge&logo=github" />
@@ -27,121 +21,112 @@
   <img alt="License" src="https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge" />
 </p>
 
-<p align="center">
-  <a href="#-features">Features</a> ·
-  <a href="#-screenshots">Screenshots</a> ·
-  <a href="#-architecture">Architecture</a> ·
-  <a href="#-quick-start">Quick Start</a> ·
-  <a href="#-api-overview">API</a> ·
-  <a href="#-demo-accounts">Demo</a>
-</p>
-
-<img src="docs/assets/social-preview.png" alt="Project banner" width="92%" />
+<img src="docs/assets/social-preview.png" alt="项目封面" width="92%" />
 
 <br/>
 
-<img src="docs/assets/login.png" alt="Login" width="88%" />
+<img src="docs/assets/login.png" alt="登录页" width="88%" />
 
-<sub>Full-stack hospital workflow: appointment booking → doctor consultation → electronic medical records → admin operations</sub>
+<sub>完整业务闭环：预约挂号 → 医生接诊 → 电子病历 → 管理运营</sub>
 
 </div>
 
 ---
 
-## ✨ Why this project
+## ✨ 项目亮点
 
-Most student “hospital systems” stop at CRUD forms.  
-This project ships a **runnable product loop**:
+很多“医院系统”只是简单 CRUD。
+本项目交付的是**可运行、可演示的产品闭环**：
 
-| Capability | What you get |
+| 能力 | 你得到什么 |
 |---|---|
-| 🔐 Real auth | Spring Security + HttpOnly JWT Cookie + role isolation |
-| 📅 Real booking | Quota reserve / release with status machine |
-| 📝 Real EMR | Appointment → medical record (1:1) |
-| 🎛️ Three portals | Patient / Doctor / Admin in one SPA |
-| 🐳 Deploy options | H2 zero-deps demo **or** full-stack Docker Compose |
-| ✅ Tests | Backend integration tests + frontend component tests |
+| 🔐 真实鉴权 | Spring Security + HttpOnly JWT Cookie + 角色隔离 |
+| 📅 真实预约 | 号源扣减/释放 + 状态机 |
+| 📝 真实病历 | 预约与病历 1:1 联动 |
+| 🎛️ 三角色门户 | 患者 / 医生 / 管理员统一 SPA |
+| 🐳 部署选择 | 默认 H2 零依赖，或全栈 Docker Compose |
+| ✅ 测试 | 后端集成测试 + 前端组件测试 |
 
 ---
 
-## 🧩 Features
+## 🧩 功能清单
 
-### Patient
-- Register / login
-- Browse departments & doctors
-- Book / cancel appointments
-- View personal electronic medical records
+### 患者端
+- 注册 / 登录
+- 浏览科室与医生
+- 预约 / 取消预约
+- 查看本人电子病历
 
-### Doctor
-- Consultation workbench
-- Write structured EMR (complaint, diagnosis, treatment, prescription)
-- View schedules & history records
+### 医生端
+- 接诊工作台
+- 书写结构化病历（主诉、诊断、处理、处方）
+- 查看排班与历史病历
 
-### Admin
-- KPI dashboard
-- Department / doctor / schedule CRUD
-- Appointment & user management
+### 管理端
+- 数据看板
+- 科室 / 医生 / 排班维护
+- 预约与用户管理
 
-### Engineering
-- Unified API response `{ code, message, data }` with real HTTP status codes
-- Global exception handling and login failure throttling
-- Seed data for instant demo
-- Swagger UI
-- Env-based secrets (`.env.example`)
+### 工程能力
+- 统一响应体 `{ code, message, data }`，并返回真实 HTTP 状态码
+- 全局异常处理与登录失败限流
+- 启动种子数据
+- Swagger 文档
+- 环境变量管理密钥（见 `.env.example`）
 
 ---
 
-## 🖼️ Screenshots
+## 🖼️ 界面截图
 
-| Patient Dashboard | Book Appointment |
+| 患者工作台 | 预约挂号 |
 |:---:|:---:|
 | <img src="docs/assets/patient-dashboard.png" width="100%" /> | <img src="docs/assets/appointment.png" width="100%" /> |
-| **My Appointments** | **Doctor EMR** |
+| **我的预约** | **医生写病历** |
 | <img src="docs/assets/my-appointments.png" width="100%" /> | <img src="docs/assets/doctor-emr.png" width="100%" /> |
-| **Record Detail** | **Admin Dashboard** |
+| **病历详情** | **管理看板** |
 | <img src="docs/assets/record-detail.png" width="100%" /> | <img src="docs/assets/admin-dashboard.png" width="100%" /> |
 
 ---
 
-## 🏗 Architecture
+## 🏗 系统架构
 
 ```text
 ┌──────────────────────┐      HTTPS/JSON       ┌──────────────────────────┐
 │  React SPA (Vite)    │ ───────────────────▶ │  Spring Boot 3 API       │
-│  Patient/Doctor/Admin│ ◀─────────────────── │  Security + JWT          │
+│  患者/医生/管理员     │ ◀─────────────────── │  Security + JWT          │
 └──────────────────────┘                      │  MyBatis-Plus Services   │
                                               └────────────┬─────────────┘
                                                            │
                                               ┌────────────▼─────────────┐
-                                              │  H2 (default) / MySQL 8  │
+                                              │  H2（默认） / MySQL 8     │
                                               └──────────────────────────┘
 ```
 
 <div align="center">
-  <img src="docs/assets/architecture.png" alt="Architecture" width="86%" />
+  <img src="docs/assets/architecture.png" alt="架构图" width="86%" />
   <br/>
-  <img src="docs/assets/flow.png" alt="Appointment flow" width="86%" />
+  <img src="docs/assets/flow.png" alt="预约流程图" width="86%" />
 </div>
 
-### Tech Stack
+### 技术栈
 
-| Layer | Technology |
-|------|------------|
-| Frontend | React 19, TypeScript 6, Vite 8, Tailwind CSS 4, React Router |
-| Backend | Spring Boot 3, Spring Security, JWT Cookie/Bearer, Validation, springdoc OpenAPI |
-| Persistence | MyBatis-Plus, H2 file DB (default), MySQL 8 (optional) |
-| Ops | Docker Compose (Nginx + API + MySQL), health checks, PowerShell scripts |
+| 层级 | 技术 |
+|------|------|
+| 前端 | React 19、TypeScript 6、Vite 8、Tailwind CSS 4、React Router |
+| 后端 | Spring Boot 3、Spring Security、JWT Cookie/Bearer、Validation、springdoc OpenAPI |
+| 数据 | MyBatis-Plus、H2 文件库（默认）、MySQL 8（可选） |
+| 运维 | Docker Compose（Nginx + 后端 + MySQL）、健康检查、PowerShell 脚本 |
 
 ---
 
-## 🚀 Quick Start
+## 🚀 快速开始
 
-### Requirements
+### 环境要求
 - **JDK 21+**
 - **Node.js 18+**
 - **Maven 3.9+**
 
-### 1) Backend
+### 1）启动后端
 
 ```bash
 cd backend
@@ -149,10 +134,10 @@ mvn -DskipTests package
 java -jar target/hospital-backend-1.0.0.jar
 ```
 
-- API: http://localhost:8080  
-- Swagger: http://localhost:8080/swagger-ui.html  
+- API：http://localhost:8080
+- Swagger：http://localhost:8080/swagger-ui.html
 
-### 2) Frontend
+### 2）启动前端
 
 ```bash
 cd frontend
@@ -160,63 +145,63 @@ npm install
 npm run dev
 ```
 
-- App: http://localhost:5173  
+- 前端：http://localhost:5173
 
-### Windows one-liners
+### Windows 快捷脚本
 
 ```powershell
 powershell -File scripts/start-backend.ps1
 powershell -File scripts/start-frontend.ps1
 ```
 
-### Full-stack Docker Compose
+### 全栈 Docker Compose
 
 ```powershell
 Copy-Item .env.example .env
-# Replace every placeholder secret in .env first.
+# 先替换 .env 中全部占位密钥
 powershell -File scripts/start-stack.ps1
 ```
 
-Open http://localhost:8088. See [deployment documentation](./docs/DEPLOYMENT.md) for HTTPS, backup and rollback guidance.
+访问 http://localhost:8088。HTTPS、备份和回滚操作见[部署文档](./docs/DEPLOYMENT.md)。
 
 ---
 
-## 👤 Demo Accounts
+## 👤 演示账号
 
-| Username | Password | Role |
-|----------|----------|------|
-| `patient` | `123456` | Patient |
-| `doctor` | `123456` | Doctor |
-| `admin` | `123456` | Admin |
+| 用户名 | 密码 | 角色 |
+|--------|------|------|
+| `patient` | `123456` | 患者 |
+| `doctor` | `123456` | 医生 |
+| `admin` | `123456` | 管理员 |
 
-> Demo only. Change credentials before any production use.
+> 仅用于演示，上线前请修改密码。
 
-### 3-minute demo path
+### 3 分钟演示路径
 
-1. Login as **patient** → book an appointment  
-2. Login as **doctor** → write EMR and complete visit  
-3. Login as **patient** → open medical record  
-4. Login as **admin** → check dashboard & management pages  
+1. 用 **patient** 登录 → 预约
+2. 用 **doctor** 登录 → 写病历完成就诊
+3. 再切 **patient** → 查看病历
+4. 用 **admin** 登录 → 查看看板与管理功能
 
 ---
 
-## 🔌 API Overview
+## 🔌 接口概览
 
-Base path: `/api`
+统一前缀：`/api`
 
-| Module | Endpoints (selected) |
-|--------|----------------------|
-| Auth | `POST /auth/login` `POST /auth/logout` `POST /auth/register` `GET /auth/me` |
-| Departments | `GET/POST/PUT /departments` |
-| Doctors | `GET/POST/PUT /doctors` |
-| Schedules | `GET/POST/PUT /schedules` |
-| Appointments | `GET/POST /appointments` `POST /appointments/{id}/cancel` |
-| Records | `GET/POST /records` `GET /records/by-appointment/{id}` |
-| Users | `GET /users` `PUT /users/{id}/status` |
-| Stats | `GET /stats/overview` |
-| Health | `GET /health` |
+| 模块 | 主要接口 |
+|------|----------|
+| 认证 | `POST /auth/login` `POST /auth/logout` `POST /auth/register` `GET /auth/me` |
+| 科室 | `GET/POST/PUT /departments` |
+| 医生 | `GET/POST/PUT /doctors` |
+| 排班 | `GET/POST/PUT /schedules` |
+| 预约 | `GET/POST /appointments` `POST /appointments/{id}/cancel` |
+| 病历 | `GET/POST /records` `GET /records/by-appointment/{id}` |
+| 用户 | `GET /users` `PUT /users/{id}/status` |
+| 统计 | `GET /stats/overview` |
+| 健康检查 | `GET /health` |
 
-Browsers authenticate with the HttpOnly `hospital_session` cookie and never persist the JWT in web storage. Non-browser clients may use:
+浏览器使用 HttpOnly `hospital_session` Cookie，不会把 JWT 持久化到 Web Storage。非浏览器客户端仍可使用：
 
 ```http
 Authorization: Bearer <jwt>
@@ -224,7 +209,7 @@ Authorization: Bearer <jwt>
 
 ---
 
-## 🧪 Tests
+## 🧪 测试
 
 ```bash
 cd backend
@@ -236,86 +221,72 @@ npm test -- --run
 npm run build
 ```
 
-Core coverage:
-- login success / failure  
-- role-based access denial  
-- patient data isolation  
-- appointment → EMR completion  
-- admin stats  
+覆盖：
+- 登录成功/失败
+- 权限拦截
+- 患者数据隔离
+- 预约 → 病历闭环
+- 管理统计
 
-For the full verification matrix, see [docs/TESTING.md](./docs/TESTING.md).
+完整验证矩阵见 [docs/TESTING.md](./docs/TESTING.md)。
 
 ---
 
-## 📁 Project Structure
+## 📁 目录结构
 
 ```text
 .
-├── backend/                 # Spring Boot API
-│   ├── src/main/java/com/hospital/
-│   │   ├── controller/      # REST endpoints
-│   │   ├── service/         # Business logic & isolation
-│   │   ├── security/        # JWT + Spring Security
-│   │   ├── entity/ mapper/  # Domain & persistence
-│   │   └── config/          # Schema init + seed data
-│   └── src/test/            # Integration tests
-├── frontend/                # React SPA
-│   └── src/
-│       ├── pages/           # patient / doctor / admin portals
-│       ├── components/      # UI + layout
-│       ├── services/        # API client
-│       └── context/         # Auth state
-├── docs/                    # Specs, demo guide, screenshots
-├── docker/                  # MySQL init SQL
-├── scripts/                 # Local start helpers
+├── backend/                 # Spring Boot 后端
+├── frontend/                # React 前端
+├── docs/                    # 设计文档、演示说明、截图
+├── docker/                  # MySQL 初始化
+├── scripts/                 # 本地启动脚本
 ├── docker-compose.yml
 └── README.md
 ```
 
 ---
 
-## 🔐 Security Notes
+## 🔐 安全说明
 
-- Passwords stored with **BCrypt**
-- Stateless **JWT** authentication through an HttpOnly, SameSite cookie (Bearer remains available for API clients)
-- Login failure throttling and explicit `401` / `403` / `429` responses
-- Role guards on frontend routes & backend APIs
-- Patients/doctors restricted to own data at service layer
-- Secrets externalized (`APP_JWT_SECRET`, datasource envs)
-
----
-
-## 🗺 Roadmap
-
-- [ ] Payment / insurance modules  
-- [ ] SMS / email notifications  
-- [ ] Queue / call-number system  
-- [x] Full-stack Docker Compose (Nginx + backend + MySQL)
-- [ ] CI pipeline (build + test)
+- 密码 **BCrypt** 存储
+- 通过 HttpOnly、SameSite Cookie 实现无状态 **JWT** 鉴权，API 客户端仍可使用 Bearer
+- 登录失败限流及明确的 `401` / `403` / `429` 状态码
+- 前后端角色守卫
+- 患者/医生业务层数据隔离
+- 密钥外置（`APP_JWT_SECRET` 等）
 
 ---
 
-## 📚 Delivery Documents
+## 🗺 后续规划
 
-- [API contract](./docs/API.md)
-- [Deployment, backup and rollback](./docs/DEPLOYMENT.md)
-- [Test strategy and cases](./docs/TESTING.md)
-- [Optimization report](./docs/OPTIMIZATION_REPORT.md)
+- [ ] 支付 / 医保模块
+- [ ] 短信 / 邮件通知
+- [ ] 叫号系统
+- [x] 前后端一体 Docker Compose（Nginx + 后端 + MySQL）
+- [ ] CI（构建 + 测试）
 
 ---
 
-## 📄 License
+## 📚 交付文档
 
-MIT — see [LICENSE](./LICENSE).
+- [API 接口契约](./docs/API.md)
+- [部署、备份与回滚](./docs/DEPLOYMENT.md)
+- [测试方案与用例](./docs/TESTING.md)
+- [整体优化报告](./docs/OPTIMIZATION_REPORT.md)
+
+---
+
+## 📄 许可证
+
+MIT，详见 [LICENSE](./LICENSE)。
 
 ---
 
 <div align="center">
 
-**If this project helps you, consider giving it a ⭐**
+**如果这个项目对你有帮助，欢迎点一个 ⭐**
 
-Built with Spring Boot & React · Ready for demo · Open for learning
-
-[English](./README.md) · [简体中文](./README.zh-CN.md)
+Spring Boot + React · 可演示 · 适合学习
 
 </div>
