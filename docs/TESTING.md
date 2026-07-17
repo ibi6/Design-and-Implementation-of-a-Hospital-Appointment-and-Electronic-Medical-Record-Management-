@@ -1,0 +1,60 @@
+# 测试与验收
+
+## 自动化命令
+
+```powershell
+Set-Location frontend
+npm ci
+npm run lint
+npm test -- --run
+npm run build
+npm audit --omit=dev
+
+Set-Location ..\backend
+..\.tools\apache-maven-3.9.6\bin\mvn.cmd test
+..\.tools\apache-maven-3.9.6\bin\mvn.cmd -DskipTests package
+```
+
+Docker 配置使用临时环境变量执行 `docker compose config --quiet`，不得把校验密码提交到仓库。
+
+## 自动化用例
+
+| 层 | 用例 | 期望 |
+|---|---|---|
+| 后端 | 正确/错误密码 | 200；错误为真实 401 |
+| 后端 | Cookie 登录、`/me`、退出 | HttpOnly；Cookie 鉴权；Max-Age=0 |
+| 后端 | 同用户连续 6 次失败 | 前 5 次 401，第 6 次 429 |
+| 后端 | 大量随机用户名触发失败 | 跟踪表有上限，过期/最旧项被淘汰 |
+| 后端 | 患者访问用户/统计 | 403 |
+| 后端 | 患者查询另一患者预约 | 仍仅包含本人 |
+| 后端 | 预约 → 医生写病历 | 预约转 COMPLETED，病历可查 |
+| 后端 | 1 个号源预占两次 | 第二次 0 行，余量不超限 |
+| 后端 | 同一预约重复取消/取消与完成竞争 | 只有第一次状态转换成功，号源不会重复释放 |
+| 后端 | 已有库缺少第 7 天排班 | 启动后自动补齐 |
+| 后端 | 错误手机/时段/号源数 | 400 与明确消息 |
+| 前端 | HTTP 请求 | 同源、Cookie、无 localStorage Token |
+| 前端 | Modal | dialog、Esc、焦点恢复、滚动锁 |
+| 前端 | 小按钮 | 默认 type=button、最小高度 44px |
+| 前端 | 异步失败 | alert 和重新加载按钮 |
+| 前端 | 东八区 UTC 跨日 | 默认排班日期仍为医院本地当天 |
+| 前端 | 登录 redirect | 仅允许当前角色自己的站内路径 |
+
+## 手工主流程
+
+1. `patient / 123456` 登录，选择未来号源并预约。
+2. `doctor / 123456` 登录，在接诊列表书写病历。
+3. 患者再次登录，预约状态为已就诊，病历详情可见。
+4. `admin / 123456` 登录，统计、科室、医生、排班、用户页面可用。
+5. 用患者 Token 请求管理员接口，确认 HTTP 403。
+
+## 视觉验收
+
+在 375×812、768×1024、1440×1000 检查首页、登录、患者工作台、医生接诊、管理看板、用户管理：无页面级横向溢出，触控目标至少 44px，抽屉/Modal 可用 Esc，Loading/Empty/Error/Success 文案准确，控制台无 error/warning。
+
+当前验收结果：后端 14/14（13 个集成测试、1 个单元测试）、前端 13/13；上述三档浏览器回归已通过。
+
+## 压力与安全建议
+
+- 用 k6/JMeter 对排班列表和预约创建做 50–100 并发测试，核对 `reserved_count <= total_quota`。
+- 在测试环境执行 OWASP ZAP baseline scan。
+- 多实例部署前把登录失败窗口迁移到 Redis，并再次验证全局限流。

@@ -2,26 +2,33 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import * as api from '@/services/api'
 import type { RecordView } from '@/types'
-import { useAuth } from '@/context/AuthContext'
+import { useAuth } from '@/context/useAuth'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { PageLoading } from '@/components/ui/Spinner'
 import { Empty } from '@/components/ui/Empty'
+import { ErrorState } from '@/components/ui/AsyncState'
+import { errorMessage } from '@/lib/errors'
 import { formatDate } from '@/lib/utils'
 
 export function RecordsPage() {
   const { user } = useAuth()
   const [loading, setLoading] = useState(true)
   const [list, setList] = useState<RecordView[]>([])
+  const [loadError, setLoadError] = useState('')
+  const [retryKey, setRetryKey] = useState(0)
 
   useEffect(() => {
     if (!user) return
     let cancelled = false
     ;(async () => {
       setLoading(true)
+      setLoadError('')
       try {
         const data = await api.getRecords({ patientId: user.id })
         if (!cancelled) setList(data)
+      } catch (error) {
+        if (!cancelled) setLoadError(errorMessage(error, '无法加载病历'))
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -29,9 +36,10 @@ export function RecordsPage() {
     return () => {
       cancelled = true
     }
-  }, [user])
+  }, [user, retryKey])
 
   if (loading) return <PageLoading />
+  if (loadError) return <ErrorState message={loadError} onRetry={() => setRetryKey((key) => key + 1)} />
 
   return (
     <div className="space-y-6">

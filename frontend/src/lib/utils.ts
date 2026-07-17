@@ -1,6 +1,28 @@
 import { clsx, type ClassValue } from 'clsx'
 import type { AppointmentStatus, TimeSlot } from '@/types'
 
+const HOSPITAL_TIME_ZONE = 'Asia/Shanghai'
+const hospitalDateFormatter = new Intl.DateTimeFormat('en-US', {
+  timeZone: HOSPITAL_TIME_ZONE,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+})
+
+/** Formats an instant as a calendar date in the hospital's operating time zone. */
+function formatHospitalDate(date: Date) {
+  let year = ''
+  let month = ''
+  let day = ''
+  for (const part of hospitalDateFormatter.formatToParts(date)) {
+    if (part.type === 'year') year = part.value
+    if (part.type === 'month') month = part.value
+    if (part.type === 'day') day = part.value
+  }
+  if (!year || !month || !day) throw new Error('无法格式化医院日期')
+  return `${year}-${month}-${day}`
+}
+
 export function cn(...inputs: ClassValue[]) {
   return clsx(inputs)
 }
@@ -24,13 +46,12 @@ export function formatDate(iso: string) {
 }
 
 export function todayStr() {
-  return formatDate(new Date().toISOString())
+  return formatHospitalDate(new Date())
 }
 
 export function addDays(base: Date, days: number) {
-  const d = new Date(base)
-  d.setDate(d.getDate() + days)
-  return formatDate(d.toISOString())
+  const shifted = new Date(base.getTime() + days * 24 * 60 * 60 * 1000)
+  return formatHospitalDate(shifted)
 }
 
 export const TIME_SLOT_LABEL: Record<TimeSlot, string> = {

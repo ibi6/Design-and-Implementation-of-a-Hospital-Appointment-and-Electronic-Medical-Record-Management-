@@ -17,6 +17,7 @@ public class DepartmentController {
     private final DepartmentService departmentService;
 
     @GetMapping
+    @PreAuthorize("!#includeDisabled or hasRole('ADMIN')")
     public ApiResponse<List<Dtos.DepartmentVO>> list(
             @RequestParam(defaultValue = "false") boolean includeDisabled) {
         return ApiResponse.ok(departmentService.list(includeDisabled));

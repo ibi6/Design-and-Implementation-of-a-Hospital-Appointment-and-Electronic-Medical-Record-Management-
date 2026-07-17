@@ -1,6 +1,7 @@
 import { Navigate, useLocation } from 'react-router-dom'
 import type { UserRole } from '@/types'
-import { useAuth, homePathFor } from '@/context/AuthContext'
+import { useAuth } from '@/context/useAuth'
+import { homePathFor } from '@/context/auth-routing'
 import { PageLoading } from '@/components/ui/Spinner'
 
 export function ProtectedRoute({

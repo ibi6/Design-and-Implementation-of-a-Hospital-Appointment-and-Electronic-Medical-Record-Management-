@@ -31,10 +31,43 @@ public class DataSeeder implements CommandLineRunner {
     @Transactional
     public void run(String... args) {
         Long count = userMapper.selectCount(null);
-        if (count != null && count > 0) {
-            return;
+        if (count == null || count == 0) {
+            seed();
         }
-        seed();
+        ensureFutureSchedules();
+    }
+
+    /**
+     * Keeps the demo environment useful over time by filling a rolling seven-day
+     * schedule window without changing existing reservations.
+     */
+    private void ensureFutureSchedules() {
+        LocalDateTime now = LocalDateTime.now();
+        List<Doctor> activeDoctors = doctorMapper.selectList(new LambdaQueryWrapper<Doctor>()
+                .eq(Doctor::getStatus, "ACTIVE"));
+        for (Doctor doctor : activeDoctors) {
+            for (int day = 0; day < 7; day++) {
+                LocalDate workDate = LocalDate.now().plusDays(day);
+                for (String slot : List.of("MORNING", "AFTERNOON")) {
+                    Long exists = scheduleMapper.selectCount(new LambdaQueryWrapper<Schedule>()
+                            .eq(Schedule::getDoctorId, doctor.getId())
+                            .eq(Schedule::getWorkDate, workDate)
+                            .eq(Schedule::getTimeSlot, slot));
+                    if (exists != null && exists > 0) continue;
+
+                    Schedule schedule = new Schedule();
+                    schedule.setDoctorId(doctor.getId());
+                    schedule.setWorkDate(workDate);
+                    schedule.setTimeSlot(slot);
+                    schedule.setTotalQuota(10);
+                    schedule.setReservedCount(0);
+                    schedule.setStatus("ACTIVE");
+                    schedule.setCreatedAt(now);
+                    schedule.setUpdatedAt(now);
+                    scheduleMapper.insert(schedule);
+                }
+            }
+        }
     }
 
     private void seed() {

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, CalendarDays, FileText, Stethoscope } from 'lucide-react'
-import { useAuth } from '@/context/AuthContext'
+import { useAuth } from '@/context/useAuth'
 import * as api from '@/services/api'
 import type { AppointmentView } from '@/types'
 import { Card, CardHeader } from '@/components/ui/Card'
@@ -10,6 +10,8 @@ import { StatusBadge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { PageLoading } from '@/components/ui/Spinner'
 import { Empty } from '@/components/ui/Empty'
+import { ErrorState } from '@/components/ui/AsyncState'
+import { errorMessage } from '@/lib/errors'
 import { TIME_SLOT_LABEL } from '@/lib/utils'
 
 export function PatientDashboard() {
@@ -17,12 +19,15 @@ export function PatientDashboard() {
   const [loading, setLoading] = useState(true)
   const [appointments, setAppointments] = useState<AppointmentView[]>([])
   const [recordCount, setRecordCount] = useState(0)
+  const [loadError, setLoadError] = useState('')
+  const [retryKey, setRetryKey] = useState(0)
 
   useEffect(() => {
     if (!user) return
     let cancelled = false
     ;(async () => {
       setLoading(true)
+      setLoadError('')
       try {
         const [apts, records] = await Promise.all([
           api.getAppointments({ patientId: user.id }),
@@ -32,6 +37,8 @@ export function PatientDashboard() {
           setAppointments(apts)
           setRecordCount(records.length)
         }
+      } catch (error) {
+        if (!cancelled) setLoadError(errorMessage(error, '无法加载患者工作台'))
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -39,9 +46,10 @@ export function PatientDashboard() {
     return () => {
       cancelled = true
     }
-  }, [user])
+  }, [user, retryKey])
 
   if (loading) return <PageLoading />
+  if (loadError) return <ErrorState message={loadError} onRetry={() => setRetryKey((key) => key + 1)} />
 
   const pending = appointments.filter((a) => a.status === 'PENDING')
   const completed = appointments.filter((a) => a.status === 'COMPLETED')

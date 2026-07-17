@@ -1,14 +1,16 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import * as api from '@/services/api'
 import type { AppointmentStatus, AppointmentView } from '@/types'
-import { useAuth } from '@/context/AuthContext'
+import { useAuth } from '@/context/useAuth'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { StatusBadge } from '@/components/ui/Badge'
 import { PageLoading } from '@/components/ui/Spinner'
 import { Empty } from '@/components/ui/Empty'
 import { TIME_SLOT_LABEL, cn } from '@/lib/utils'
+import { ErrorState } from '@/components/ui/AsyncState'
+import { errorMessage } from '@/lib/errors'
 
 const tabs: { key: AppointmentStatus | 'ALL'; label: string }[] = [
   { key: 'ALL', label: '全部' },
@@ -24,22 +26,27 @@ export function AppointmentsPage() {
   const [list, setList] = useState<AppointmentView[]>([])
   const [busyId, setBusyId] = useState('')
   const [error, setError] = useState('')
+  const [loadError, setLoadError] = useState('')
 
-  const load = async () => {
+  const load = useCallback(async () => {
     if (!user) return
     setLoading(true)
+    setLoadError('')
     try {
       const data = await api.getAppointments({ patientId: user.id, status })
       setList(data)
+    } catch (loadFailure) {
+      setLoadError(errorMessage(loadFailure, '无法加载预约'))
     } finally {
       setLoading(false)
     }
-  }
+  }, [status, user])
 
   useEffect(() => {
     void load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, status])
+  }, [load])
+
+  if (!loading && loadError) return <ErrorState message={loadError} onRetry={() => void load()} />
 
   const onCancel = async (id: string) => {
     if (!user) return
@@ -87,7 +94,7 @@ export function AppointmentsPage() {
       </div>
 
       {error ? (
-        <div className="rounded-2xl bg-rose-50 px-3 py-2 text-sm text-rose-600">{error}</div>
+        <div role="alert" className="rounded-2xl bg-rose-50 px-3 py-2 text-sm text-rose-600">{error}</div>
       ) : null}
 
       {loading ? (

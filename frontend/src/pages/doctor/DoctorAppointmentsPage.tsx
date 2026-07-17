@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import * as api from '@/services/api'
 import type { AppointmentStatus, AppointmentView, DoctorView } from '@/types'
-import { useAuth } from '@/context/AuthContext'
+import { useAuth } from '@/context/useAuth'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { StatusBadge } from '@/components/ui/Badge'
 import { PageLoading } from '@/components/ui/Spinner'
 import { Empty } from '@/components/ui/Empty'
+import { ErrorState } from '@/components/ui/AsyncState'
+import { errorMessage } from '@/lib/errors'
 import { TIME_SLOT_LABEL, cn } from '@/lib/utils'
 
 const tabs: { key: AppointmentStatus | 'ALL'; label: string }[] = [
@@ -22,12 +24,15 @@ export function DoctorAppointmentsPage() {
   const [doctor, setDoctor] = useState<DoctorView | null>(null)
   const [status, setStatus] = useState<AppointmentStatus | 'ALL'>('PENDING')
   const [list, setList] = useState<AppointmentView[]>([])
+  const [loadError, setLoadError] = useState('')
+  const [retryKey, setRetryKey] = useState(0)
 
   useEffect(() => {
     if (!user) return
     let cancelled = false
     ;(async () => {
       setLoading(true)
+      setLoadError('')
       try {
         const doc = await api.getDoctorByUserId(user.id)
         if (!doc) {
@@ -39,6 +44,8 @@ export function DoctorAppointmentsPage() {
           setDoctor(doc)
           setList(apts)
         }
+      } catch (error) {
+        if (!cancelled) setLoadError(errorMessage(error, '无法加载接诊列表'))
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -46,9 +53,10 @@ export function DoctorAppointmentsPage() {
     return () => {
       cancelled = true
     }
-  }, [user, status])
+  }, [user, status, retryKey])
 
   if (loading) return <PageLoading />
+  if (loadError) return <ErrorState message={loadError} onRetry={() => setRetryKey((key) => key + 1)} />
   if (!doctor) return <Empty title="未绑定医生档案" />
 
   return (

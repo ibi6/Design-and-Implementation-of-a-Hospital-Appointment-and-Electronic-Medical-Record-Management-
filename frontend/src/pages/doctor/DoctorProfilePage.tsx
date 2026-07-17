@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '@/context/AuthContext'
+import { useAuth } from '@/context/useAuth'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { ROLE_LABEL } from '@/lib/utils'
@@ -36,8 +36,7 @@ export function DoctorProfilePage() {
         <Button
           variant="secondary"
           onClick={() => {
-            logout()
-            navigate('/login')
+            void logout().then(() => navigate('/login', { replace: true }))
           }}
         >
           退出登录

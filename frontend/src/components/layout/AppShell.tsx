@@ -1,8 +1,8 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { Activity, Bell, LogOut, Menu, Sparkles, X } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
-import { useAuth } from '@/context/AuthContext'
+import { useAuth } from '@/context/useAuth'
 import { ROLE_LABEL, cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 
@@ -27,10 +27,29 @@ export function AppShell({
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
+  const menuButtonRef = useRef<HTMLButtonElement>(null)
+  const drawerCloseRef = useRef<HTMLButtonElement>(null)
 
-  const onLogout = () => {
-    logout()
-    navigate('/login')
+  useEffect(() => {
+    if (!open) return
+    const menuButton = menuButtonRef.current
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    drawerCloseRef.current?.focus()
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('keydown', onKeyDown)
+      document.body.style.overflow = previousOverflow
+      menuButton?.focus()
+    }
+  }, [open])
+
+  const onLogout = async () => {
+    await logout()
+    navigate('/login', { replace: true })
   }
 
   const NavContent = (
@@ -103,7 +122,7 @@ export function AppShell({
             </div>
           </div>
         </div>
-        <Button variant="secondary" size="sm" className="mt-3 w-full" onClick={onLogout}>
+        <Button variant="secondary" size="sm" className="mt-3 w-full" onClick={() => void onLogout()}>
           <LogOut className="h-4 w-4" />
           退出登录
         </Button>
@@ -127,9 +146,14 @@ export function AppShell({
               aria-label="关闭菜单"
               onClick={() => setOpen(false)}
             />
-            <aside className="relative z-10 flex h-full w-80 flex-col bg-white/95 shadow-2xl backdrop-blur">
+            <aside
+              role="dialog"
+              aria-modal="true"
+              aria-label="主导航"
+              className="relative z-10 flex h-full w-80 max-w-[88vw] flex-col bg-white/95 shadow-2xl backdrop-blur"
+            >
               <div className="flex justify-end p-3">
-                <Button variant="ghost" size="sm" onClick={() => setOpen(false)} aria-label="关闭">
+                <Button ref={drawerCloseRef} variant="ghost" size="sm" onClick={() => setOpen(false)} aria-label="关闭">
                   <X className="h-4 w-4" />
                 </Button>
               </div>
@@ -143,6 +167,7 @@ export function AppShell({
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <Button
+                  ref={menuButtonRef}
                   variant="ghost"
                   size="sm"
                   className="lg:hidden"

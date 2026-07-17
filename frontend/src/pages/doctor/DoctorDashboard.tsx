@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { CalendarCheck2, ClipboardList, FileHeart } from 'lucide-react'
-import { useAuth } from '@/context/AuthContext'
+import { useAuth } from '@/context/useAuth'
 import * as api from '@/services/api'
 import type { AppointmentView, DoctorView } from '@/types'
 import { StatCard } from '@/components/ui/StatCard'
@@ -10,6 +10,8 @@ import { StatusBadge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { PageLoading } from '@/components/ui/Spinner'
 import { Empty } from '@/components/ui/Empty'
+import { ErrorState } from '@/components/ui/AsyncState'
+import { errorMessage } from '@/lib/errors'
 import { TIME_SLOT_LABEL, todayStr } from '@/lib/utils'
 
 export function DoctorDashboard() {
@@ -17,12 +19,15 @@ export function DoctorDashboard() {
   const [loading, setLoading] = useState(true)
   const [doctor, setDoctor] = useState<DoctorView | null>(null)
   const [appointments, setAppointments] = useState<AppointmentView[]>([])
+  const [loadError, setLoadError] = useState('')
+  const [retryKey, setRetryKey] = useState(0)
 
   useEffect(() => {
     if (!user) return
     let cancelled = false
     ;(async () => {
       setLoading(true)
+      setLoadError('')
       try {
         const doc = await api.getDoctorByUserId(user.id)
         if (!doc) {
@@ -34,6 +39,8 @@ export function DoctorDashboard() {
           setDoctor(doc)
           setAppointments(apts)
         }
+      } catch (error) {
+        if (!cancelled) setLoadError(errorMessage(error, '无法加载医生工作台'))
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -41,9 +48,10 @@ export function DoctorDashboard() {
     return () => {
       cancelled = true
     }
-  }, [user])
+  }, [user, retryKey])
 
   if (loading) return <PageLoading />
+  if (loadError) return <ErrorState message={loadError} onRetry={() => setRetryKey((key) => key + 1)} />
   if (!doctor) return <Empty title="未绑定医生档案" description="请联系管理员完善医生信息" />
 
   const today = todayStr()

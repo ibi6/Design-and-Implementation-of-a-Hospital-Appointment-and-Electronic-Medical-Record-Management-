@@ -2,12 +2,14 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import * as api from '@/services/api'
 import type { AppointmentView, RecordView } from '@/types'
-import { useAuth } from '@/context/AuthContext'
+import { useAuth } from '@/context/useAuth'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Textarea } from '@/components/ui/Textarea'
 import { Input } from '@/components/ui/Input'
 import { PageLoading } from '@/components/ui/Spinner'
+import { ErrorState } from '@/components/ui/AsyncState'
+import { errorMessage } from '@/lib/errors'
 import { Empty } from '@/components/ui/Empty'
 import { TIME_SLOT_LABEL, formatDate } from '@/lib/utils'
 
@@ -20,6 +22,8 @@ export function WriteRecordPage() {
   const [existing, setExisting] = useState<RecordView | null>(null)
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [loadError, setLoadError] = useState('')
+  const [retryKey, setRetryKey] = useState(0)
   const [form, setForm] = useState({
     chiefComplaint: '',
     presentIllness: '',
@@ -33,6 +37,7 @@ export function WriteRecordPage() {
     let cancelled = false
     ;(async () => {
       setLoading(true)
+      setLoadError('')
       try {
         const apt = await api.getAppointment(id)
         const rec = await api.getRecordByAppointment(id)
@@ -52,6 +57,8 @@ export function WriteRecordPage() {
             setForm((f) => ({ ...f, chiefComplaint: apt.symptomNote }))
           }
         }
+      } catch (loadFailure) {
+        if (!cancelled) setLoadError(errorMessage(loadFailure, '无法加载接诊信息'))
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -59,7 +66,7 @@ export function WriteRecordPage() {
     return () => {
       cancelled = true
     }
-  }, [id])
+  }, [id, retryKey])
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -81,6 +88,7 @@ export function WriteRecordPage() {
   }
 
   if (loading) return <PageLoading />
+  if (loadError) return <ErrorState message={loadError} onRetry={() => setRetryKey((key) => key + 1)} />
   if (!appointment) {
     return (
       <Empty
@@ -165,7 +173,7 @@ export function WriteRecordPage() {
           />
 
           {error ? (
-            <div className="rounded-2xl bg-rose-50 px-3 py-2 text-sm text-rose-600">{error}</div>
+            <div role="alert" className="rounded-2xl bg-rose-50 px-3 py-2 text-sm text-rose-600">{error}</div>
           ) : null}
 
           {!readonly ? (

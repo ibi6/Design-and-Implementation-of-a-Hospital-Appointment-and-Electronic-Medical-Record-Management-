@@ -2,6 +2,11 @@ $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $PSScriptRoot
 Set-Location $Root
 
+if (-not (Test-Path (Join-Path $Root ".env"))) {
+  Write-Host "Missing .env. Copy .env.example to .env and replace all passwords first."
+  exit 1
+}
+
 Write-Host "Checking Docker daemon..."
 docker info 1>$null 2>$null
 if ($LASTEXITCODE -ne 0) {
@@ -16,7 +21,8 @@ docker compose up -d mysql
 Write-Host "Waiting for MySQL health..."
 $ok = $false
 for ($i = 0; $i -lt 40; $i++) {
-  $status = docker inspect --format='{{.State.Health.Status}}' hospital-mysql 2>$null
+  $containerId = docker compose ps -q mysql
+  $status = if ($containerId) { docker inspect --format='{{.State.Health.Status}}' $containerId 2>$null } else { "" }
   if ($status -eq "healthy") {
     $ok = $true
     break
@@ -29,5 +35,5 @@ if (-not $ok) {
   exit 1
 }
 
-Write-Host "MySQL is healthy on localhost:3306 (root/root, database=hospital)"
+Write-Host "MySQL is healthy on the configured localhost MYSQL_PORT."
 Write-Host "Start backend with: powershell -File scripts/start-backend.ps1 mysql"

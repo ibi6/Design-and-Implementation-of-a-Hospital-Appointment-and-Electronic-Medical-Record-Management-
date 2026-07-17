@@ -1,34 +1,41 @@
-# 慧医通 · 前端展示版
+# 慧医通前端
 
-基于 React + Vite + Tailwind 的医院预约挂号与电子病历管理系统前端（Mock 数据）。
+慧医通患者、医生、管理员三角色 SPA。前端使用 React 19、TypeScript 6、Vite 8 和 Tailwind CSS 4，并对接 Spring Boot `/api` 接口。
 
-## 启动
+## 本地开发
 
-```bash
+先启动根目录中的后端服务，然后执行：
+
+```powershell
 cd frontend
 npm install
 npm run dev
 ```
 
-访问：http://localhost:5173
+访问 http://localhost:5173。Vite 会把同源 `/api` 请求代理到 http://127.0.0.1:8080。
 
-## 演示账号
+## 质量检查
 
-| 账号 | 密码 | 角色 |
-|------|------|------|
-| patient | 123456 | 患者 |
-| doctor | 123456 | 医生 |
-| admin | 123456 | 管理员 |
+```powershell
+npm run lint
+npm test -- --run
+npm run build
+```
 
-## 已完成页面
+测试覆盖 HTTP Cookie 会话、错误响应、可访问 Modal、触控尺寸和异步错误重试状态。
 
-- 落地首页、登录、注册、404
-- 患者：工作台、科室、医生、预约、病历、个人中心
-- 医生：工作台、接诊、写病历、排班、历史病历
-- 管理：看板、科室/医生/排班/预约/用户管理
+## 认证与安全
 
-## Mock 说明
+- 浏览器使用后端设置的 HttpOnly、SameSite `hospital_session` Cookie。
+- 请求统一使用 `credentials: include`，JWT 不写入 `localStorage` 或 `sessionStorage`。
+- 前端路由守卫用于用户体验；最终权限仍由后端角色和数据归属校验决定。
+- 开发环境通过 Vite 同源代理访问 API；生产环境由 Nginx 反向代理 `/api`。
 
-- 鉴权与业务数据均在浏览器 localStorage
-- 刷新页面数据会保留；可在患者端「个人中心」重置演示数据
-- 尚未接入 SpringBoot 后端
+## 页面范围
+
+- 公共：落地页、登录、注册、404。
+- 患者：工作台、科室、医生、预约、病历、个人中心。
+- 医生：工作台、接诊、病历书写、排班、历史病历。
+- 管理员：数据看板、科室、医生、排班、预约和用户管理。
+
+完整启动与部署流程见根目录 [README.zh-CN.md](../README.zh-CN.md) 和 [docs/DEPLOYMENT.md](../docs/DEPLOYMENT.md)。

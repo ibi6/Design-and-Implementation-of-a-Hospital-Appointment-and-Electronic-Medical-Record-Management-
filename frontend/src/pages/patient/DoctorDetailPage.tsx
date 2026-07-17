@@ -2,11 +2,13 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import * as api from '@/services/api'
 import type { DoctorView, Schedule } from '@/types'
-import { useAuth } from '@/context/AuthContext'
+import { useAuth } from '@/context/useAuth'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Textarea } from '@/components/ui/Textarea'
 import { PageLoading } from '@/components/ui/Spinner'
+import { ErrorState } from '@/components/ui/AsyncState'
+import { errorMessage } from '@/lib/errors'
 import { Empty } from '@/components/ui/Empty'
 import { TIME_SLOT_LABEL, cn } from '@/lib/utils'
 
@@ -21,17 +23,22 @@ export function DoctorDetailPage() {
   const [note, setNote] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [loadError, setLoadError] = useState('')
+  const [retryKey, setRetryKey] = useState(0)
 
   useEffect(() => {
     let cancelled = false
     ;(async () => {
       setLoading(true)
+      setLoadError('')
       try {
         const [doc, sch] = await Promise.all([api.getDoctor(id), api.getSchedules({ doctorId: id })])
         if (!cancelled) {
           setDoctor(doc)
           setSchedules(sch)
         }
+      } catch (loadFailure) {
+        if (!cancelled) setLoadError(errorMessage(loadFailure, '无法加载医生与号源'))
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -39,7 +46,7 @@ export function DoctorDetailPage() {
     return () => {
       cancelled = true
     }
-  }, [id])
+  }, [id, retryKey])
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -65,6 +72,7 @@ export function DoctorDetailPage() {
   }
 
   if (loading) return <PageLoading />
+  if (loadError) return <ErrorState message={loadError} onRetry={() => setRetryKey((key) => key + 1)} />
   if (!doctor) {
     return (
       <Empty
@@ -147,7 +155,7 @@ export function DoctorDetailPage() {
             />
 
             {error ? (
-              <div className="rounded-2xl bg-rose-50 px-3 py-2 text-sm text-rose-600">{error}</div>
+              <div role="alert" className="rounded-2xl bg-rose-50 px-3 py-2 text-sm text-rose-600">{error}</div>
             ) : null}
 
             <Button type="submit" disabled={submitting}>

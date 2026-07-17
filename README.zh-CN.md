@@ -5,7 +5,7 @@
 ### Design and Implementation of a Hospital Appointment  
 ### and Electronic Medical Record Management System
 
-**Spring Boot 3 · React · JWT · MyBatis-Plus · H2 / MySQL**
+**Spring Boot 3 · React 19 · HttpOnly JWT Cookie · MyBatis-Plus · H2 / MySQL**
 
 <p>
   <a href="./README.md">English</a> ·
@@ -21,8 +21,8 @@
 <p>
   <img alt="Java" src="https://img.shields.io/badge/Java-21-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white" />
   <img alt="Spring Boot" src="https://img.shields.io/badge/Spring%20Boot-3.3-6DB33F?style=for-the-badge&logo=springboot&logoColor=white" />
-  <img alt="React" src="https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black" />
-  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white" />
+  <img alt="React" src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black" />
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-6-3178C6?style=for-the-badge&logo=typescript&logoColor=white" />
   <img alt="Tailwind" src="https://img.shields.io/badge/Tailwind-4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" />
   <img alt="License" src="https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge" />
 </p>
@@ -46,12 +46,12 @@
 
 | 能力 | 你得到什么 |
 |---|---|
-| 🔐 真实鉴权 | Spring Security + JWT + 角色隔离 |
+| 🔐 真实鉴权 | Spring Security + HttpOnly JWT Cookie + 角色隔离 |
 | 📅 真实预约 | 号源扣减/释放 + 状态机 |
 | 📝 真实病历 | 预约与病历 1:1 联动 |
 | 🎛️ 三角色门户 | 患者 / 医生 / 管理员统一 SPA |
-| 🐳 部署选择 | 默认 H2 零依赖，或 MySQL + Docker |
-| ✅ 测试 | 核心 API 集成测试 |
+| 🐳 部署选择 | 默认 H2 零依赖，或全栈 Docker Compose |
+| ✅ 测试 | 后端集成测试 + 前端组件测试 |
 
 ---
 
@@ -74,8 +74,8 @@
 - 预约与用户管理  
 
 ### 工程能力
-- 统一响应体 `{ code, message, data }`  
-- 全局异常处理  
+- 统一响应体 `{ code, message, data }`，并返回真实 HTTP 状态码
+- 全局异常处理与登录失败限流
 - 启动种子数据  
 - Swagger 文档  
 - 环境变量管理密钥（见 `.env.example`）  
@@ -118,10 +118,10 @@
 
 | 层级 | 技术 |
 |------|------|
-| 前端 | React 18、TypeScript、Vite、Tailwind CSS、React Router、lucide-react |
-| 后端 | Spring Boot 3、Spring Security、JWT、Validation、springdoc OpenAPI |
+| 前端 | React 19、TypeScript 6、Vite 8、Tailwind CSS 4、React Router |
+| 后端 | Spring Boot 3、Spring Security、JWT Cookie/Bearer、Validation、springdoc OpenAPI |
 | 数据 | MyBatis-Plus、H2 文件库（默认）、MySQL 8（可选） |
-| 运维 | Docker Compose（MySQL）、PowerShell 启动脚本 |
+| 运维 | Docker Compose（Nginx + 后端 + MySQL）、健康检查、PowerShell 脚本 |
 
 ---
 
@@ -160,14 +160,15 @@ powershell -File scripts/start-backend.ps1
 powershell -File scripts/start-frontend.ps1
 ```
 
-### 可选：MySQL + Docker
+### 全栈 Docker Compose
 
 ```powershell
-powershell -File scripts/start-mysql.ps1
-powershell -File scripts/start-backend.ps1 mysql
+Copy-Item .env.example .env
+# 先替换 .env 中全部占位密钥
+powershell -File scripts/start-stack.ps1
 ```
 
-> 密钥请用环境变量配置，详见 [`.env.example`](./.env.example)。
+访问 http://localhost:8088。HTTPS、备份和回滚操作见[部署文档](./docs/DEPLOYMENT.md)。
 
 ---
 
@@ -196,7 +197,7 @@ powershell -File scripts/start-backend.ps1 mysql
 
 | 模块 | 主要接口 |
 |------|----------|
-| 认证 | `POST /auth/login` `POST /auth/register` `GET /auth/me` |
+| 认证 | `POST /auth/login` `POST /auth/logout` `POST /auth/register` `GET /auth/me` |
 | 科室 | `GET/POST/PUT /departments` |
 | 医生 | `GET/POST/PUT /doctors` |
 | 排班 | `GET/POST/PUT /schedules` |
@@ -204,8 +205,9 @@ powershell -File scripts/start-backend.ps1 mysql
 | 病历 | `GET/POST /records` `GET /records/by-appointment/{id}` |
 | 用户 | `GET /users` `PUT /users/{id}/status` |
 | 统计 | `GET /stats/overview` |
+| 健康检查 | `GET /health` |
 
-请求头：
+浏览器使用 HttpOnly `hospital_session` Cookie，不会把 JWT 持久化到 Web Storage。非浏览器客户端仍可使用：
 
 ```http
 Authorization: Bearer <jwt>
@@ -218,6 +220,11 @@ Authorization: Bearer <jwt>
 ```bash
 cd backend
 mvn test
+
+cd ../frontend
+npm run lint
+npm test -- --run
+npm run build
 ```
 
 覆盖：
@@ -226,6 +233,8 @@ mvn test
 - 患者数据隔离  
 - 预约 → 病历闭环  
 - 管理统计  
+
+完整验证矩阵见 [docs/TESTING.md](./docs/TESTING.md)。
 
 ---
 
@@ -248,7 +257,8 @@ mvn test
 ## 🔐 安全说明
 
 - 密码 **BCrypt** 存储  
-- 无状态 **JWT** 鉴权  
+- 通过 HttpOnly、SameSite Cookie 实现无状态 **JWT** 鉴权，API 客户端仍可使用 Bearer
+- 登录失败限流及明确的 `401` / `403` / `429` 状态码
 - 前后端角色守卫  
 - 患者/医生业务层数据隔离  
 - 密钥外置（`APP_JWT_SECRET` 等）  
@@ -260,8 +270,17 @@ mvn test
 - [ ] 支付 / 医保模块  
 - [ ] 短信 / 邮件通知  
 - [ ] 叫号系统  
-- [ ] 前后端一体 Docker Compose  
+- [x] 前后端一体 Docker Compose（Nginx + 后端 + MySQL）
 - [ ] CI（构建 + 测试）  
+
+---
+
+## 📚 交付文档
+
+- [API 接口契约](./docs/API.md)
+- [部署、备份与回滚](./docs/DEPLOYMENT.md)
+- [测试方案与用例](./docs/TESTING.md)
+- [整体优化报告](./docs/OPTIMIZATION_REPORT.md)
 
 ---
 

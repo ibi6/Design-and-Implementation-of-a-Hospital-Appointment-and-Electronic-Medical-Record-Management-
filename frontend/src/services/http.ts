@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080'
+const API_BASE = (import.meta.env.VITE_API_BASE || '').replace(/\/$/, '')
 
 export type ApiEnvelope<T> = {
   code: number
@@ -6,26 +6,15 @@ export type ApiEnvelope<T> = {
   data: T
 }
 
-function getToken() {
-  return localStorage.getItem('hospital_token') || ''
-}
-
-export function setToken(token: string | null) {
-  if (!token) localStorage.removeItem('hospital_token')
-  else localStorage.setItem('hospital_token', token)
-}
-
 export async function http<T>(path: string, options: RequestInit = {}): Promise<T> {
   const headers = new Headers(options.headers || {})
   if (!headers.has('Content-Type') && options.body) {
     headers.set('Content-Type', 'application/json')
   }
-  const token = getToken()
-  if (token) headers.set('Authorization', `Bearer ${token}`)
-
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers,
+    credentials: 'include',
   })
 
   let payload: ApiEnvelope<T> | null = null
@@ -38,7 +27,7 @@ export async function http<T>(path: string, options: RequestInit = {}): Promise<
   if (!payload || typeof payload.code !== 'number') {
     throw new Error('响应格式错误')
   }
-  if (payload.code !== 0) {
+  if (!res.ok || payload.code !== 0) {
     throw new Error(payload.message || '请求失败')
   }
   return payload.data

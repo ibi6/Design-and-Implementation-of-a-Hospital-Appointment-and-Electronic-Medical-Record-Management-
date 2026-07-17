@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import * as api from '@/services/api'
 import type { DoctorView, Schedule, TimeSlot } from '@/types'
 import { Card } from '@/components/ui/Card'
@@ -9,6 +9,8 @@ import { Modal } from '@/components/ui/Modal'
 import { PageLoading } from '@/components/ui/Spinner'
 import { Empty } from '@/components/ui/Empty'
 import { TIME_SLOT_LABEL, todayStr } from '@/lib/utils'
+import { ErrorState } from '@/components/ui/AsyncState'
+import { errorMessage } from '@/lib/errors'
 
 export function AdminSchedulesPage() {
   const [loading, setLoading] = useState(true)
@@ -18,6 +20,7 @@ export function AdminSchedulesPage() {
   const [open, setOpen] = useState(false)
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
+  const [loadError, setLoadError] = useState('')
   const [form, setForm] = useState({
     doctorId: '',
     workDate: todayStr(),
@@ -25,32 +28,52 @@ export function AdminSchedulesPage() {
     totalQuota: 10,
   })
 
-  const loadDoctors = async () => {
-    const docs = await api.getDoctors()
-    setDoctors(docs)
-    if (!doctorId && docs[0]) setDoctorId(docs[0].id)
-  }
+  const loadDoctors = useCallback(async () => {
+    setLoading(true)
+    try {
+      setLoadError('')
+      const docs = await api.getDoctors()
+      setDoctors(docs)
+      setDoctorId((current) => current || docs[0]?.id || '')
+    } catch (loadFailure) {
+      setLoadError(errorMessage(loadFailure, '无法加载医生列表'))
+      setLoading(false)
+    }
+  }, [])
 
-  const loadSchedules = async (id: string) => {
+  const loadSchedules = useCallback(async (id: string) => {
     if (!id) {
       setList([])
+      setLoading(false)
       return
     }
     setLoading(true)
+    setLoadError('')
     try {
       setList(await api.getSchedules({ doctorId: id }))
+    } catch (loadFailure) {
+      setLoadError(errorMessage(loadFailure, '无法加载排班'))
     } finally {
       setLoading(false)
     }
-  }
-
-  useEffect(() => {
-    void loadDoctors()
   }, [])
 
   useEffect(() => {
+    void loadDoctors()
+  }, [loadDoctors])
+
+  useEffect(() => {
     void loadSchedules(doctorId)
-  }, [doctorId])
+  }, [doctorId, loadSchedules])
+
+  if (!loading && loadError) {
+    return (
+      <ErrorState
+        message={loadError}
+        onRetry={() => void (doctorId ? loadSchedules(doctorId) : loadDoctors())}
+      />
+    )
+  }
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -163,7 +186,7 @@ export function AdminSchedulesPage() {
             onChange={(e) => setForm({ ...form, totalQuota: Number(e.target.value) })}
             required
           />
-          {error ? <div className="text-sm text-rose-600">{error}</div> : null}
+          {error ? <div role="alert" className="text-sm text-rose-600">{error}</div> : null}
           <div className="flex justify-end gap-2">
             <Button type="button" variant="secondary" onClick={() => setOpen(false)}>
               取消

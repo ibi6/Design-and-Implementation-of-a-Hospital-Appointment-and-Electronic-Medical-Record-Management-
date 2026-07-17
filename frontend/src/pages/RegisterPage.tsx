@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card } from '@/components/ui/Card'
-import { useAuth } from '@/context/AuthContext'
+import { useAuth } from '@/context/useAuth'
 
 export function RegisterPage() {
   const { register } = useAuth()
@@ -70,7 +70,7 @@ export function RegisterPage() {
               required
             />
             {error ? (
-              <div className="rounded-2xl bg-rose-50 px-3 py-2 text-sm text-rose-600">{error}</div>
+              <div role="alert" className="rounded-2xl bg-rose-50 px-3 py-2 text-sm text-rose-600">{error}</div>
             ) : null}
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? '提交中...' : '注册并登录'}

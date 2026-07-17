@@ -17,6 +17,7 @@ public class DoctorController {
     private final DoctorService doctorService;
 
     @GetMapping
+    @PreAuthorize("!#includeDisabled or hasRole('ADMIN')")
     public ApiResponse<List<Dtos.DoctorVO>> list(
             @RequestParam(required = false) String departmentId,
             @RequestParam(required = false) String keyword,

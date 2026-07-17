@@ -44,9 +44,8 @@ public class StatsService {
         if (scheduleIds.isEmpty()) {
             vo.setTodayAppointments(0);
         } else {
-            long todayCount = appointmentMapper.selectList(null).stream()
-                    .filter(a -> scheduleIds.contains(a.getScheduleId()))
-                    .count();
+            long todayCount = appointmentMapper.selectCount(new LambdaQueryWrapper<Appointment>()
+                    .in(Appointment::getScheduleId, scheduleIds));
             vo.setTodayAppointments(todayCount);
         }
         return vo;

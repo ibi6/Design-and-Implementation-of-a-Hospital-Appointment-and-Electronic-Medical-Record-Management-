@@ -82,6 +82,10 @@ public class RecordService {
                 .eq(MedicalRecord::getAppointmentId, apt.getId()));
         if (exists != null && exists > 0) throw new BizException("病历已存在");
 
+        if (appointmentMapper.completePending(apt.getId()) != 1) {
+            throw new BizException(409, "预约状态已变更，请刷新后重试");
+        }
+
         LocalDateTime now = LocalDateTime.now();
         MedicalRecord rec = new MedicalRecord();
         rec.setRecordNo(genNo("MR"));
@@ -98,8 +102,6 @@ public class RecordService {
         rec.setUpdatedAt(now);
         recordMapper.insert(rec);
 
-        apt.setStatus("COMPLETED");
-        appointmentMapper.updateById(apt);
         return toVO(rec);
     }
 

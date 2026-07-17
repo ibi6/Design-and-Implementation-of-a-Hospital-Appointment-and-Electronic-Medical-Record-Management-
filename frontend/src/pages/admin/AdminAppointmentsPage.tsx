@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import * as api from '@/services/api'
 import type { AppointmentStatus, AppointmentView } from '@/types'
-import { useAuth } from '@/context/AuthContext'
+import { useAuth } from '@/context/useAuth'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Select } from '@/components/ui/Select'
@@ -9,6 +9,8 @@ import { StatusBadge } from '@/components/ui/Badge'
 import { PageLoading } from '@/components/ui/Spinner'
 import { Empty } from '@/components/ui/Empty'
 import { TIME_SLOT_LABEL } from '@/lib/utils'
+import { ErrorState } from '@/components/ui/AsyncState'
+import { errorMessage } from '@/lib/errors'
 
 export function AdminAppointmentsPage() {
   const { user } = useAuth()
@@ -17,19 +19,25 @@ export function AdminAppointmentsPage() {
   const [list, setList] = useState<AppointmentView[]>([])
   const [busyId, setBusyId] = useState('')
   const [error, setError] = useState('')
+  const [loadError, setLoadError] = useState('')
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true)
+    setLoadError('')
     try {
       setList(await api.getAppointments({ status }))
+    } catch (loadFailure) {
+      setLoadError(errorMessage(loadFailure, '无法加载全院预约'))
     } finally {
       setLoading(false)
     }
-  }
+  }, [status])
 
   useEffect(() => {
     void load()
-  }, [status])
+  }, [load])
+
+  if (!loading && loadError) return <ErrorState message={loadError} onRetry={() => void load()} />
 
   const onCancel = async (id: string) => {
     if (!user) return
@@ -68,7 +76,7 @@ export function AdminAppointmentsPage() {
       </div>
 
       {error ? (
-        <div className="rounded-2xl bg-rose-50 px-3 py-2 text-sm text-rose-600">{error}</div>
+        <div role="alert" className="rounded-2xl bg-rose-50 px-3 py-2 text-sm text-rose-600">{error}</div>
       ) : null}
 
       {loading ? (

@@ -1,69 +1,47 @@
 # 慧医通后端 · Spring Boot
 
-医院预约挂号与电子病历管理系统后端。
+医院预约挂号与电子病历管理系统 API，使用 Java 21、Spring Boot 3.3、Spring Security、MyBatis-Plus、H2/MySQL 和 springdoc OpenAPI。
 
-## 技术栈
+## 本地启动（默认 H2）
 
-- Java 21
-- Spring Boot 3.3
-- Spring Security + JWT
-- MyBatis-Plus
-- 默认 H2 文件库（可切换 MySQL）
-- springdoc OpenAPI
-
-## 启动（默认 H2，无需安装 MySQL）
-
-```bash
-# 如未安装 Maven，可使用项目自带工具：
-# ..\.tools\apache-maven-3.9.6\bin\mvn.cmd
-
+```powershell
 cd backend
 mvn -DskipTests package
 java -jar target/hospital-backend-1.0.0.jar
 ```
 
-或：
+未全局安装 Maven 时，可使用仓库内的 `..\.tools\apache-maven-3.9.6\bin\mvn.cmd`。
 
-```bash
-mvn spring-boot:run
-```
+- API：http://localhost:8080/api
+- 健康检查：http://localhost:8080/api/health
+- Swagger：http://localhost:8080/swagger-ui.html
+- H2 控制台：http://localhost:8080/h2-console
 
-服务地址：http://localhost:8080  
-Swagger：http://localhost:8080/swagger-ui.html  
-H2 控制台：http://localhost:8080/h2-console  
-（JDBC URL: `jdbc:h2:file:./data/hospital`，用户 `sa`，密码空）
+H2 和 Swagger 仅用于默认开发配置，`prod` profile 会关闭两者并要求外部提供数据库与 JWT 密钥。
 
-## 演示账号
+## MySQL 与生产配置
 
-| 账号 | 密码 | 角色 |
-|------|------|------|
-| patient | 123456 | 患者 |
-| doctor | 123456 | 医生 |
-| admin | 123456 | 管理员 |
+开发用 MySQL：
 
-首次启动会自动建表并写入种子数据。
-
-## 切换 MySQL
-
-1. 创建库（或启动时使用 `schema-mysql.sql`）
-2. 修改 `application-mysql.yml` 中的账号密码
-3. 启动：
-
-```bash
+```powershell
 java -jar target/hospital-backend-1.0.0.jar --spring.profiles.active=mysql
 ```
 
-## 主要接口
+生产或 Compose 使用 `prod,mysql`，至少设置 `SPRING_DATASOURCE_URL`、`SPRING_DATASOURCE_USERNAME`、`SPRING_DATASOURCE_PASSWORD` 和不少于 32 字节的 `APP_JWT_SECRET`。完整变量、Docker、备份与回滚说明见 [docs/DEPLOYMENT.md](../docs/DEPLOYMENT.md)。
 
-- `POST /api/auth/login`
-- `POST /api/auth/register`
-- `GET /api/auth/me`
-- `GET/POST/PUT /api/departments`
-- `GET/POST/PUT /api/doctors`
-- `GET/POST/PUT /api/schedules`
-- `GET/POST /api/appointments`，`POST /api/appointments/{id}/cancel`
-- `GET/POST /api/records`
-- `GET /api/users`（管理员）
-- `GET /api/stats/overview`
+## 认证与错误语义
 
-统一响应：`{ code, message, data }`，`code=0` 表示成功。
+- 登录成功设置 HttpOnly、SameSite 会话 Cookie；Bearer Token 仍兼容非浏览器 API 客户端。
+- `POST /api/auth/logout` 清除会话 Cookie。
+- 同一用户名连续失败会触发 `429 Too Many Requests`。
+- 统一响应体为 `{ code, message, data }`，并使用对应的 `400`、`401`、`403`、`404`、`409`、`429`、`500` HTTP 状态。
+
+接口契约与错误码见 [docs/API.md](../docs/API.md)。
+
+## 测试
+
+```powershell
+mvn test
+```
+
+集成测试覆盖登录、Cookie、权限隔离、限流、预约与病历闭环、原子号源更新、管理统计及健康检查。完整测试方案见 [docs/TESTING.md](../docs/TESTING.md)。

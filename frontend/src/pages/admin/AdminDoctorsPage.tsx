@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import * as api from '@/services/api'
 import type { Department, DoctorView, EntityStatus } from '@/types'
 import { Card } from '@/components/ui/Card'
@@ -10,6 +10,8 @@ import { Modal } from '@/components/ui/Modal'
 import { PageLoading } from '@/components/ui/Spinner'
 import { Empty } from '@/components/ui/Empty'
 import { Badge } from '@/components/ui/Badge'
+import { ErrorState } from '@/components/ui/AsyncState'
+import { errorMessage } from '@/lib/errors'
 
 const emptyForm = {
   id: '',
@@ -32,9 +34,11 @@ export function AdminDoctorsPage() {
   const [form, setForm] = useState(emptyForm)
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
+  const [loadError, setLoadError] = useState('')
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true)
+    setLoadError('')
     try {
       const [docs, deps] = await Promise.all([
         api.getDoctors({ includeDisabled: true }),
@@ -42,14 +46,18 @@ export function AdminDoctorsPage() {
       ])
       setList(docs)
       setDepartments(deps)
+    } catch (loadFailure) {
+      setLoadError(errorMessage(loadFailure, '无法加载医生档案'))
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
     void load()
-  }, [])
+  }, [load])
+
+  if (!loading && loadError) return <ErrorState message={loadError} onRetry={() => void load()} />
 
   const openCreate = () => {
     setForm({
@@ -226,7 +234,7 @@ export function AdminDoctorsPage() {
             <option value="ACTIVE">在职</option>
             <option value="DISABLED">停用</option>
           </Select>
-          {error ? <div className="text-sm text-rose-600">{error}</div> : null}
+          {error ? <div role="alert" className="text-sm text-rose-600">{error}</div> : null}
           <div className="flex justify-end gap-2">
             <Button type="button" variant="secondary" onClick={() => setOpen(false)}>
               取消

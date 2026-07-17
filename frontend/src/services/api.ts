@@ -11,14 +11,13 @@ import type {
   UserPublic,
   UserRole,
 } from '@/types'
-import { http, qs, setToken } from './http'
+import { http, qs } from './http'
 
 export async function login(username: string, password: string): Promise<UserPublic> {
   const data = await http<{ token: string; user: UserPublic }>('/api/auth/login', {
     method: 'POST',
     body: JSON.stringify({ username, password }),
   })
-  setToken(data.token)
   return data.user
 }
 
@@ -32,7 +31,6 @@ export async function register(payload: {
     method: 'POST',
     body: JSON.stringify(payload),
   })
-  setToken(data.token)
   return data.user
 }
 
@@ -260,10 +258,6 @@ export async function getStats(): Promise<StatsOverview> {
   return http<StatsOverview>('/api/stats/overview')
 }
 
-export async function resetDemoData(): Promise<void> {
-  throw new Error('联调模式下请重启后端以重新初始化演示数据（H2 文件库可删除 backend/data 后重启）')
-}
-
-export function logoutClient() {
-  setToken(null)
+export async function logoutClient(): Promise<void> {
+  await http<void>('/api/auth/logout', { method: 'POST' })
 }

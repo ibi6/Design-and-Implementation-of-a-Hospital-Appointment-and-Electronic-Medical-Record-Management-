@@ -8,6 +8,7 @@ import com.hospital.entity.SysUser;
 import com.hospital.mapper.DoctorMapper;
 import com.hospital.mapper.SysUserMapper;
 import com.hospital.security.JwtService;
+import com.hospital.security.LoginAttemptService;
 import com.hospital.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -24,16 +25,20 @@ public class UserService {
     private final DoctorMapper doctorMapper;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final LoginAttemptService loginAttemptService;
 
     public Dtos.LoginResponse login(Dtos.LoginRequest req) {
+        loginAttemptService.assertAllowed(req.getUsername());
         SysUser user = userMapper.selectOne(new LambdaQueryWrapper<SysUser>()
                 .eq(SysUser::getUsername, req.getUsername().trim()));
         if (user == null || !passwordEncoder.matches(req.getPassword(), user.getPasswordHash())) {
+            loginAttemptService.recordFailure(req.getUsername());
             throw new BizException(401, "用户名或密码错误");
         }
         if (!"ACTIVE".equals(user.getStatus())) {
             throw new BizException(403, "账号已停用");
         }
+        loginAttemptService.recordSuccess(req.getUsername());
         String token = jwtService.generate(user.getId(), user.getUsername(), user.getRole());
         Dtos.LoginResponse resp = new Dtos.LoginResponse();
         resp.setToken(token);

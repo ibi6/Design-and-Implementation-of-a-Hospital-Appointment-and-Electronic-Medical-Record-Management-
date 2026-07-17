@@ -8,6 +8,8 @@ import { Select } from '@/components/ui/Select'
 import { Button } from '@/components/ui/Button'
 import { PageLoading } from '@/components/ui/Spinner'
 import { Empty } from '@/components/ui/Empty'
+import { ErrorState } from '@/components/ui/AsyncState'
+import { errorMessage } from '@/lib/errors'
 
 export function DoctorsPage() {
   const [params, setParams] = useSearchParams()
@@ -15,12 +17,15 @@ export function DoctorsPage() {
   const [doctors, setDoctors] = useState<DoctorView[]>([])
   const [departments, setDepartments] = useState<Department[]>([])
   const [keyword, setKeyword] = useState(params.get('q') || '')
+  const [loadError, setLoadError] = useState('')
+  const [retryKey, setRetryKey] = useState(0)
   const departmentId = params.get('departmentId') || ''
 
   useEffect(() => {
     let cancelled = false
     ;(async () => {
       setLoading(true)
+      setLoadError('')
       try {
         const [docs, deps] = await Promise.all([
           api.getDoctors({
@@ -33,6 +38,8 @@ export function DoctorsPage() {
           setDoctors(docs)
           setDepartments(deps)
         }
+      } catch (error) {
+        if (!cancelled) setLoadError(errorMessage(error, '无法加载医生列表'))
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -40,7 +47,7 @@ export function DoctorsPage() {
     return () => {
       cancelled = true
     }
-  }, [departmentId, keyword])
+  }, [departmentId, keyword, retryKey])
 
   return (
     <div className="space-y-6">
@@ -84,6 +91,8 @@ export function DoctorsPage() {
 
       {loading ? (
         <PageLoading />
+      ) : loadError ? (
+        <ErrorState message={loadError} onRetry={() => setRetryKey((key) => key + 1)} />
       ) : doctors.length === 0 ? (
         <Empty title="没有匹配的医生" description="试试更换科室或关键词" />
       ) : (

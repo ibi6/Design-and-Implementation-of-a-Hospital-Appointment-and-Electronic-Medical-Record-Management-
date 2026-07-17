@@ -9,7 +9,10 @@ CREATE TABLE IF NOT EXISTS sys_user (
   avatar_url VARCHAR(255),
   created_at DATETIME NOT NULL,
   updated_at DATETIME NOT NULL,
-  deleted INT DEFAULT 0
+  deleted INT DEFAULT 0,
+  CONSTRAINT chk_user_role CHECK (role IN ('PATIENT', 'DOCTOR', 'ADMIN')),
+  CONSTRAINT chk_user_status CHECK (status IN ('ACTIVE', 'DISABLED')),
+  INDEX idx_user_role_status (role, status)
 );
 
 CREATE TABLE IF NOT EXISTS department (
@@ -20,7 +23,9 @@ CREATE TABLE IF NOT EXISTS department (
   status VARCHAR(16) NOT NULL,
   created_at DATETIME NOT NULL,
   updated_at DATETIME NOT NULL,
-  deleted INT DEFAULT 0
+  deleted INT DEFAULT 0,
+  CONSTRAINT uq_department_name UNIQUE (name),
+  CONSTRAINT chk_department_status CHECK (status IN ('ACTIVE', 'DISABLED'))
 );
 
 CREATE TABLE IF NOT EXISTS doctor (
@@ -33,7 +38,12 @@ CREATE TABLE IF NOT EXISTS doctor (
   status VARCHAR(16) NOT NULL,
   created_at DATETIME NOT NULL,
   updated_at DATETIME NOT NULL,
-  deleted INT DEFAULT 0
+  deleted INT DEFAULT 0,
+  CONSTRAINT uq_doctor_user UNIQUE (user_id),
+  CONSTRAINT fk_doctor_user FOREIGN KEY (user_id) REFERENCES sys_user(id),
+  CONSTRAINT fk_doctor_department FOREIGN KEY (department_id) REFERENCES department(id),
+  CONSTRAINT chk_doctor_status CHECK (status IN ('ACTIVE', 'DISABLED')),
+  INDEX idx_doctor_department_status (department_id, status)
 );
 
 CREATE TABLE IF NOT EXISTS schedule (
@@ -46,7 +56,12 @@ CREATE TABLE IF NOT EXISTS schedule (
   status VARCHAR(16) NOT NULL,
   created_at DATETIME NOT NULL,
   updated_at DATETIME NOT NULL,
-  deleted INT DEFAULT 0
+  deleted INT DEFAULT 0,
+  CONSTRAINT uq_schedule_slot UNIQUE (doctor_id, work_date, time_slot),
+  CONSTRAINT fk_schedule_doctor FOREIGN KEY (doctor_id) REFERENCES doctor(id),
+  CONSTRAINT chk_schedule_slot CHECK (time_slot IN ('MORNING', 'AFTERNOON')),
+  CONSTRAINT chk_schedule_quota CHECK (total_quota > 0 AND reserved_count >= 0 AND reserved_count <= total_quota),
+  INDEX idx_schedule_date_status (work_date, status)
 );
 
 CREATE TABLE IF NOT EXISTS appointment (
@@ -60,7 +75,15 @@ CREATE TABLE IF NOT EXISTS appointment (
   symptom_note VARCHAR(512),
   created_at DATETIME NOT NULL,
   cancelled_at DATETIME NULL,
-  deleted INT DEFAULT 0
+  deleted INT DEFAULT 0,
+  CONSTRAINT fk_appointment_patient FOREIGN KEY (patient_id) REFERENCES sys_user(id),
+  CONSTRAINT fk_appointment_doctor FOREIGN KEY (doctor_id) REFERENCES doctor(id),
+  CONSTRAINT fk_appointment_schedule FOREIGN KEY (schedule_id) REFERENCES schedule(id),
+  CONSTRAINT fk_appointment_department FOREIGN KEY (department_id) REFERENCES department(id),
+  CONSTRAINT chk_appointment_status CHECK (status IN ('PENDING', 'COMPLETED', 'CANCELLED', 'NO_SHOW')),
+  INDEX idx_appointment_patient_status (patient_id, status),
+  INDEX idx_appointment_doctor_status (doctor_id, status),
+  INDEX idx_appointment_schedule (schedule_id)
 );
 
 CREATE TABLE IF NOT EXISTS medical_record (
@@ -77,5 +100,10 @@ CREATE TABLE IF NOT EXISTS medical_record (
   prescription VARCHAR(1024),
   created_at DATETIME NOT NULL,
   updated_at DATETIME NOT NULL,
-  deleted INT DEFAULT 0
+  deleted INT DEFAULT 0,
+  CONSTRAINT fk_record_appointment FOREIGN KEY (appointment_id) REFERENCES appointment(id),
+  CONSTRAINT fk_record_patient FOREIGN KEY (patient_id) REFERENCES sys_user(id),
+  CONSTRAINT fk_record_doctor FOREIGN KEY (doctor_id) REFERENCES doctor(id),
+  INDEX idx_record_patient (patient_id),
+  INDEX idx_record_doctor (doctor_id)
 );

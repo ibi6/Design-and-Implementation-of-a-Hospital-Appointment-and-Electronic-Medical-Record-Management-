@@ -35,6 +35,14 @@ app:
     # Override in production via APP_JWT_SECRET (min 32 chars for HS256)
     secret: ${APP_JWT_SECRET:change-me-hospital-jwt-secret-key-32chars-min}
     expire-hours: ${APP_JWT_EXPIRE_HOURS:72}
+  auth:
+    cookie-name: ${APP_AUTH_COOKIE_NAME:hospital_session}
+    cookie-secure: ${APP_COOKIE_SECURE:false}
+    cookie-same-site: ${APP_COOKIE_SAME_SITE:Lax}
+    cookie-max-age-seconds: ${APP_COOKIE_MAX_AGE_SECONDS:259200}
+    max-login-failures: ${APP_MAX_LOGIN_FAILURES:5}
+    login-failure-window-minutes: ${APP_LOGIN_FAILURE_WINDOW_MINUTES:15}
+    max-tracked-usernames: ${APP_MAX_TRACKED_USERNAMES:10000}
   cors-origins: ${APP_CORS_ORIGINS:http://localhost:5173,http://127.0.0.1:5173}
 
 springdoc:

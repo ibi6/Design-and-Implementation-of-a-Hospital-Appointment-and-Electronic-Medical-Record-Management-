@@ -6,18 +6,25 @@ import type { Department } from '@/types'
 import { Card } from '@/components/ui/Card'
 import { PageLoading } from '@/components/ui/Spinner'
 import { Empty } from '@/components/ui/Empty'
+import { ErrorState } from '@/components/ui/AsyncState'
+import { errorMessage } from '@/lib/errors'
 
 export function DepartmentsPage() {
   const [loading, setLoading] = useState(true)
   const [list, setList] = useState<Department[]>([])
+  const [loadError, setLoadError] = useState('')
+  const [retryKey, setRetryKey] = useState(0)
 
   useEffect(() => {
     let cancelled = false
     ;(async () => {
       setLoading(true)
+      setLoadError('')
       try {
         const data = await api.getDepartments()
         if (!cancelled) setList(data)
+      } catch (error) {
+        if (!cancelled) setLoadError(errorMessage(error, '无法加载科室信息'))
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -25,9 +32,10 @@ export function DepartmentsPage() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [retryKey])
 
   if (loading) return <PageLoading />
+  if (loadError) return <ErrorState message={loadError} onRetry={() => setRetryKey((key) => key + 1)} />
 
   if (list.length === 0) {
     return <Empty title="暂无科室" description="请联系管理员维护科室信息" />

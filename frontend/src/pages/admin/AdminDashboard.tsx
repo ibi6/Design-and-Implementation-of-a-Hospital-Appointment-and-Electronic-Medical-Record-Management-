@@ -12,18 +12,25 @@ import type { StatsOverview } from '@/types'
 import { StatCard } from '@/components/ui/StatCard'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { PageLoading } from '@/components/ui/Spinner'
+import { ErrorState } from '@/components/ui/AsyncState'
+import { errorMessage } from '@/lib/errors'
 
 export function AdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState<StatsOverview | null>(null)
+  const [loadError, setLoadError] = useState('')
+  const [retryKey, setRetryKey] = useState(0)
 
   useEffect(() => {
     let cancelled = false
     ;(async () => {
       setLoading(true)
+      setLoadError('')
       try {
         const data = await api.getStats()
         if (!cancelled) setStats(data)
+      } catch (error) {
+        if (!cancelled) setLoadError(errorMessage(error, '无法加载运营统计'))
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -31,9 +38,12 @@ export function AdminDashboard() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [retryKey])
 
-  if (loading || !stats) return <PageLoading />
+  if (loading) return <PageLoading />
+  if (loadError || !stats) {
+    return <ErrorState message={loadError || '统计数据为空'} onRetry={() => setRetryKey((key) => key + 1)} />
+  }
 
   const totalStatus = stats.pendingCount + stats.completedCount + stats.cancelledCount || 1
 
@@ -41,7 +51,7 @@ export function AdminDashboard() {
     <div className="space-y-6">
       <div>
         <h2 className="text-xl font-semibold text-slate-900">运营看板</h2>
-        <p className="mt-1 text-sm text-slate-500">医院预约与资源概览（Mock 实时统计）</p>
+        <p className="mt-1 text-sm text-slate-500">医院预约与资源实时概览</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -88,7 +98,7 @@ export function AdminDashboard() {
               <ul className="mt-3 space-y-2 text-sm text-slate-500">
                 <li>· 先维护科室，再录入医生档案</li>
                 <li>· 为医生配置未来排班后，患者端才可约号</li>
-                <li>· 演示数据保存在浏览器，可在患者端个人中心重置</li>
+                <li>· 演示环境会自动补齐未来 7 天排班</li>
               </ul>
             </div>
           </div>

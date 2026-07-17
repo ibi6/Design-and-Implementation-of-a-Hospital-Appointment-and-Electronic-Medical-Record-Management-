@@ -5,6 +5,8 @@ import type { RecordView } from '@/types'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { PageLoading } from '@/components/ui/Spinner'
+import { ErrorState } from '@/components/ui/AsyncState'
+import { errorMessage } from '@/lib/errors'
 import { Empty } from '@/components/ui/Empty'
 import { formatDate } from '@/lib/utils'
 
@@ -23,14 +25,19 @@ export function RecordDetailPage() {
   const { id = '' } = useParams()
   const [loading, setLoading] = useState(true)
   const [record, setRecord] = useState<RecordView | null>(null)
+  const [loadError, setLoadError] = useState('')
+  const [retryKey, setRetryKey] = useState(0)
 
   useEffect(() => {
     let cancelled = false
     ;(async () => {
       setLoading(true)
+      setLoadError('')
       try {
         const data = await api.getRecord(id)
         if (!cancelled) setRecord(data)
+      } catch (error) {
+        if (!cancelled) setLoadError(errorMessage(error, '无法加载病历详情'))
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -38,9 +45,10 @@ export function RecordDetailPage() {
     return () => {
       cancelled = true
     }
-  }, [id])
+  }, [id, retryKey])
 
   if (loading) return <PageLoading />
+  if (loadError) return <ErrorState message={loadError} onRetry={() => setRetryKey((key) => key + 1)} />
   if (!record) {
     return (
       <Empty

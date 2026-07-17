@@ -9,7 +9,8 @@ import {
   Stethoscope,
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
-import { useAuth, homePathFor } from '@/context/AuthContext'
+import { useAuth } from '@/context/useAuth'
+import { homePathFor } from '@/context/auth-routing'
 
 export function LandingPage() {
   const { user } = useAuth()
@@ -90,8 +91,8 @@ export function LandingPage() {
           <div className="relative float-soft rounded-[2rem] border border-white/80 bg-white/85 p-6 shadow-[0_24px_60px_-28px_rgba(15,23,42,0.35)] backdrop-blur-xl">
             <div className="mb-5 flex items-center justify-between">
               <div>
-                <div className="text-sm font-semibold text-slate-900">今日运营概览</div>
-                <div className="mt-0.5 text-xs text-slate-500">实时演示数据</div>
+                <div className="text-sm font-semibold text-slate-900">演示场景概览</div>
+                <div className="mt-0.5 text-xs text-slate-500">示意指标 · 登录后查看真实数据</div>
               </div>
               <div className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-100">
                 系统正常

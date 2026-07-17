@@ -71,12 +71,9 @@ public class AppointmentService {
             throw new BizException(403, "仅患者可预约");
         }
         Long patientId = patient.getId();
-        Schedule schedule = scheduleMapper.selectById(Dtos.parseId(req.getScheduleId()));
+        Schedule schedule = scheduleMapper.selectForUpdate(Dtos.parseId(req.getScheduleId()));
         if (schedule == null || !"ACTIVE".equals(schedule.getStatus())) {
             throw new BizException("号源不存在或已停用");
-        }
-        if (schedule.getReservedCount() >= schedule.getTotalQuota()) {
-            throw new BizException("该时段号源已满");
         }
         Long dup = appointmentMapper.selectCount(new LambdaQueryWrapper<Appointment>()
                 .eq(Appointment::getPatientId, patientId)
@@ -84,8 +81,12 @@ public class AppointmentService {
                 .eq(Appointment::getStatus, "PENDING"));
         if (dup != null && dup > 0) throw new BizException("您已预约该时段，请勿重复预约");
 
-        Doctor doctor = doctorService.requireEntity(schedule.getDoctorId());
         LocalDateTime now = LocalDateTime.now();
+        if (scheduleMapper.reserveQuota(schedule.getId(), now) != 1) {
+            throw new BizException("该时段号源已满或已停用");
+        }
+
+        Doctor doctor = doctorService.requireEntity(schedule.getDoctorId());
         Appointment apt = new Appointment();
         apt.setAppointmentNo(genNo("AP"));
         apt.setPatientId(patientId);
@@ -97,9 +98,6 @@ public class AppointmentService {
         apt.setCreatedAt(now);
         appointmentMapper.insert(apt);
 
-        schedule.setReservedCount(schedule.getReservedCount() + 1);
-        schedule.setUpdatedAt(now);
-        scheduleMapper.updateById(schedule);
         return toVO(apt);
     }
 
@@ -119,16 +117,15 @@ public class AppointmentService {
             }
         }
         LocalDateTime now = LocalDateTime.now();
+        if (appointmentMapper.cancelPending(apt.getId(), now) != 1) {
+            throw new BizException(409, "预约状态已变更，请刷新后重试");
+        }
+
+        if (scheduleMapper.releaseQuota(apt.getScheduleId(), now) != 1) {
+            throw new BizException(409, "号源计数异常，请联系管理员");
+        }
         apt.setStatus("CANCELLED");
         apt.setCancelledAt(now);
-        appointmentMapper.updateById(apt);
-
-        Schedule schedule = scheduleMapper.selectById(apt.getScheduleId());
-        if (schedule != null && schedule.getReservedCount() > 0) {
-            schedule.setReservedCount(schedule.getReservedCount() - 1);
-            schedule.setUpdatedAt(now);
-            scheduleMapper.updateById(schedule);
-        }
         return toVO(apt);
     }
 

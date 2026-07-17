@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import * as api from '@/services/api'
 import type { DoctorView, Schedule } from '@/types'
-import { useAuth } from '@/context/AuthContext'
+import { useAuth } from '@/context/useAuth'
 import { Card } from '@/components/ui/Card'
 import { PageLoading } from '@/components/ui/Spinner'
 import { Empty } from '@/components/ui/Empty'
+import { ErrorState } from '@/components/ui/AsyncState'
+import { errorMessage } from '@/lib/errors'
 import { TIME_SLOT_LABEL } from '@/lib/utils'
 
 export function DoctorSchedulesPage() {
@@ -12,12 +14,15 @@ export function DoctorSchedulesPage() {
   const [loading, setLoading] = useState(true)
   const [doctor, setDoctor] = useState<DoctorView | null>(null)
   const [list, setList] = useState<Schedule[]>([])
+  const [loadError, setLoadError] = useState('')
+  const [retryKey, setRetryKey] = useState(0)
 
   useEffect(() => {
     if (!user) return
     let cancelled = false
     ;(async () => {
       setLoading(true)
+      setLoadError('')
       try {
         const doc = await api.getDoctorByUserId(user.id)
         if (!doc) {
@@ -29,6 +34,8 @@ export function DoctorSchedulesPage() {
           setDoctor(doc)
           setList(sch)
         }
+      } catch (error) {
+        if (!cancelled) setLoadError(errorMessage(error, '无法加载排班'))
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -36,9 +43,10 @@ export function DoctorSchedulesPage() {
     return () => {
       cancelled = true
     }
-  }, [user])
+  }, [user, retryKey])
 
   if (loading) return <PageLoading />
+  if (loadError) return <ErrorState message={loadError} onRetry={() => setRetryKey((key) => key + 1)} />
   if (!doctor) return <Empty title="未绑定医生档案" />
 
   return (

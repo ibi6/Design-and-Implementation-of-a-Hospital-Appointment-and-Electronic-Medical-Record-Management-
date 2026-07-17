@@ -1,7 +1,13 @@
 package com.hospital;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hospital.config.DataSeeder;
+import com.hospital.entity.Appointment;
+import com.hospital.entity.Schedule;
+import com.hospital.mapper.AppointmentMapper;
+import com.hospital.mapper.ScheduleMapper;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -10,13 +16,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -31,6 +42,18 @@ class CoreApiIntegrationTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private ScheduleMapper scheduleMapper;
+
+    @Autowired
+    private AppointmentMapper appointmentMapper;
+
+    @Autowired
+    private DataSeeder dataSeeder;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     private String login(String username, String password) throws Exception {
         MvcResult result = mockMvc.perform(post("/api/auth/login")
@@ -59,7 +82,7 @@ class CoreApiIntegrationTest {
                         .content("""
                                 {"username":"patient","password":"wrong"}
                                 """))
-                .andExpect(status().isOk())
+                .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value(401));
     }
 
@@ -68,7 +91,7 @@ class CoreApiIntegrationTest {
     void patientCannotAccessAdminUsers() throws Exception {
         String token = login("patient", "123456");
         mockMvc.perform(get("/api/users").header("Authorization", "Bearer " + token))
-                .andExpect(status().isOk())
+                .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value(403));
     }
 
@@ -174,5 +197,196 @@ class CoreApiIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.userCount").isNumber());
+    }
+
+    @Test
+    @Order(6)
+    void browserSessionUsesHttpOnlyCookieAndLogoutClearsIt() throws Exception {
+        MvcResult loginResult = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"username":"patient","password":"123456"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(cookie().exists("hospital_session"))
+                .andExpect(cookie().httpOnly("hospital_session", true))
+                .andReturn();
+
+        var sessionCookie = loginResult.getResponse().getCookie("hospital_session");
+        assertThat(sessionCookie).isNotNull();
+
+        mockMvc.perform(get("/api/auth/me").cookie(sessionCookie))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.username").value("patient"));
+
+        mockMvc.perform(post("/api/auth/logout").cookie(sessionCookie))
+                .andExpect(status().isOk())
+                .andExpect(cookie().maxAge("hospital_session", 0));
+    }
+
+    @Test
+    @Order(7)
+    void unauthenticatedRequestUsesHttp401() throws Exception {
+        mockMvc.perform(get("/api/auth/me"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value(401));
+    }
+
+    @Test
+    @Order(8)
+    void repeatedLoginFailuresAreRateLimited() throws Exception {
+        for (int attempt = 1; attempt <= 5; attempt++) {
+            mockMvc.perform(post("/api/auth/login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("""
+                                    {"username":"rate-limit-probe","password":"wrong-pass"}
+                                    """))
+                    .andExpect(status().isUnauthorized())
+                    .andExpect(jsonPath("$.code").value(401));
+        }
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"username":"rate-limit-probe","password":"wrong-pass"}
+                                """))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.code").value(429));
+    }
+
+    @Test
+    @Order(9)
+    void rejectsInvalidInputsAndProtectsHospitalStats() throws Exception {
+        String patientToken = login("patient", "123456");
+        mockMvc.perform(get("/api/stats/overview")
+                        .header("Authorization", "Bearer " + patientToken))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value(403));
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "username":"invalid_phone_probe",
+                                  "password":"123456",
+                                  "realName":"测试患者",
+                                  "phone":"123"
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(400));
+
+        String adminToken = login("admin", "123456");
+        JsonNode doctors = body(mockMvc.perform(get("/api/doctors")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andReturn()).path("data");
+        String doctorId = doctors.get(0).path("id").asText();
+
+        mockMvc.perform(post("/api/schedules")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "doctorId":"%s",
+                                  "workDate":"2099-01-01",
+                                  "timeSlot":"EVENING",
+                                  "totalQuota":0
+                                }
+                                """.formatted(doctorId)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(400));
+    }
+
+    @Test
+    @Order(10)
+    void quotaReservationIsAtomicAndNeverExceedsCapacity() {
+        Schedule template = scheduleMapper.selectList(new LambdaQueryWrapper<Schedule>()
+                        .eq(Schedule::getStatus, "ACTIVE")
+                        .last("LIMIT 1"))
+                .stream()
+                .findFirst()
+                .orElseThrow();
+
+        Schedule probe = new Schedule();
+        probe.setDoctorId(template.getDoctorId());
+        probe.setWorkDate(LocalDate.now().plusYears(10));
+        probe.setTimeSlot("MORNING");
+        probe.setTotalQuota(1);
+        probe.setReservedCount(0);
+        probe.setStatus("ACTIVE");
+        probe.setCreatedAt(LocalDateTime.now());
+        probe.setUpdatedAt(LocalDateTime.now());
+        scheduleMapper.insert(probe);
+
+        assertThat(scheduleMapper.reserveQuota(probe.getId(), LocalDateTime.now())).isEqualTo(1);
+        assertThat(scheduleMapper.reserveQuota(probe.getId(), LocalDateTime.now())).isZero();
+        assertThat(scheduleMapper.selectById(probe.getId()).getReservedCount()).isEqualTo(1);
+    }
+
+    @Test
+    @Order(11)
+    void existingDemoDatabaseGetsRollingFutureSchedules() throws Exception {
+        LocalDate lastDemoDay = LocalDate.now().plusDays(6);
+        jdbcTemplate.update("DELETE FROM schedule WHERE work_date = ?", lastDemoDay);
+        assertThat(scheduleMapper.selectCount(new LambdaQueryWrapper<Schedule>()
+                .eq(Schedule::getWorkDate, lastDemoDay))).isZero();
+
+        dataSeeder.run();
+
+        assertThat(scheduleMapper.selectCount(new LambdaQueryWrapper<Schedule>()
+                .eq(Schedule::getWorkDate, lastDemoDay))).isGreaterThan(0);
+    }
+
+    @Test
+    @Order(12)
+    void healthEndpointIsPublicAndMinimal() throws Exception {
+        mockMvc.perform(get("/api/health"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.status").value("UP"));
+    }
+
+    @Test
+    @Order(13)
+    void appointmentStateTransitionsAreCompareAndSet() {
+        Schedule schedule = scheduleMapper.selectList(new LambdaQueryWrapper<Schedule>()
+                        .eq(Schedule::getStatus, "ACTIVE")
+                        .last("LIMIT 1"))
+                .stream()
+                .findFirst()
+                .orElseThrow();
+        Long patientId = jdbcTemplate.queryForObject(
+                "SELECT id FROM sys_user WHERE username = 'patient2'", Long.class);
+        Long departmentId = jdbcTemplate.queryForObject(
+                "SELECT department_id FROM doctor WHERE id = ?", Long.class, schedule.getDoctorId());
+
+        Appointment cancelProbe = new Appointment();
+        cancelProbe.setAppointmentNo("AP-CANCEL-" + System.nanoTime());
+        cancelProbe.setPatientId(patientId);
+        cancelProbe.setDoctorId(schedule.getDoctorId());
+        cancelProbe.setScheduleId(schedule.getId());
+        cancelProbe.setDepartmentId(departmentId);
+        cancelProbe.setStatus("PENDING");
+        cancelProbe.setSymptomNote("state transition probe");
+        cancelProbe.setCreatedAt(LocalDateTime.now());
+        appointmentMapper.insert(cancelProbe);
+
+        assertThat(appointmentMapper.cancelPending(cancelProbe.getId(), LocalDateTime.now())).isEqualTo(1);
+        assertThat(appointmentMapper.cancelPending(cancelProbe.getId(), LocalDateTime.now())).isZero();
+
+        Appointment completeProbe = new Appointment();
+        completeProbe.setAppointmentNo("AP-COMPLETE-" + System.nanoTime());
+        completeProbe.setPatientId(patientId);
+        completeProbe.setDoctorId(schedule.getDoctorId());
+        completeProbe.setScheduleId(schedule.getId());
+        completeProbe.setDepartmentId(departmentId);
+        completeProbe.setStatus("PENDING");
+        completeProbe.setSymptomNote("state transition probe");
+        completeProbe.setCreatedAt(LocalDateTime.now());
+        appointmentMapper.insert(completeProbe);
+
+        assertThat(appointmentMapper.completePending(completeProbe.getId())).isEqualTo(1);
+        assertThat(appointmentMapper.cancelPending(completeProbe.getId(), LocalDateTime.now())).isZero();
     }
 }

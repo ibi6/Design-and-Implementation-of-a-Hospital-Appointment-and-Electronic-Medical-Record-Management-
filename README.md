@@ -5,7 +5,7 @@
 ### Design and Implementation of a Hospital Appointment Registration  
 ### & Electronic Medical Record Management System
 
-**Spring Boot 3 · React · JWT · MyBatis-Plus · H2 / MySQL**
+**Spring Boot 3 · React 19 · HttpOnly JWT Cookie · MyBatis-Plus · H2 / MySQL**
 
 <p>
   <a href="./README.md">English</a> ·
@@ -21,8 +21,8 @@
 <p>
   <img alt="Java" src="https://img.shields.io/badge/Java-21-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white" />
   <img alt="Spring Boot" src="https://img.shields.io/badge/Spring%20Boot-3.3-6DB33F?style=for-the-badge&logo=springboot&logoColor=white" />
-  <img alt="React" src="https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black" />
-  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white" />
+  <img alt="React" src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black" />
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-6-3178C6?style=for-the-badge&logo=typescript&logoColor=white" />
   <img alt="Tailwind" src="https://img.shields.io/badge/Tailwind-4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" />
   <img alt="License" src="https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge" />
 </p>
@@ -55,12 +55,12 @@ This project ships a **runnable product loop**:
 
 | Capability | What you get |
 |---|---|
-| 🔐 Real auth | Spring Security + JWT + role isolation |
+| 🔐 Real auth | Spring Security + HttpOnly JWT Cookie + role isolation |
 | 📅 Real booking | Quota reserve / release with status machine |
 | 📝 Real EMR | Appointment → medical record (1:1) |
 | 🎛️ Three portals | Patient / Doctor / Admin in one SPA |
-| 🐳 Deploy options | H2 zero-deps demo **or** MySQL + Docker |
-| ✅ Tests | Integration tests for core API paths |
+| 🐳 Deploy options | H2 zero-deps demo **or** full-stack Docker Compose |
+| ✅ Tests | Backend integration tests + frontend component tests |
 
 ---
 
@@ -83,8 +83,8 @@ This project ships a **runnable product loop**:
 - Appointment & user management
 
 ### Engineering
-- Unified API response `{ code, message, data }`
-- Global exception handling
+- Unified API response `{ code, message, data }` with real HTTP status codes
+- Global exception handling and login failure throttling
 - Seed data for instant demo
 - Swagger UI
 - Env-based secrets (`.env.example`)
@@ -127,10 +127,10 @@ This project ships a **runnable product loop**:
 
 | Layer | Technology |
 |------|------------|
-| Frontend | React 18, TypeScript, Vite, Tailwind CSS, React Router, lucide-react |
-| Backend | Spring Boot 3, Spring Security, JWT, Validation, springdoc OpenAPI |
+| Frontend | React 19, TypeScript 6, Vite 8, Tailwind CSS 4, React Router |
+| Backend | Spring Boot 3, Spring Security, JWT Cookie/Bearer, Validation, springdoc OpenAPI |
 | Persistence | MyBatis-Plus, H2 file DB (default), MySQL 8 (optional) |
-| Ops | Docker Compose (MySQL), PowerShell start scripts |
+| Ops | Docker Compose (Nginx + API + MySQL), health checks, PowerShell scripts |
 
 ---
 
@@ -169,14 +169,15 @@ powershell -File scripts/start-backend.ps1
 powershell -File scripts/start-frontend.ps1
 ```
 
-### Optional: MySQL + Docker
+### Full-stack Docker Compose
 
 ```powershell
-powershell -File scripts/start-mysql.ps1
-powershell -File scripts/start-backend.ps1 mysql
+Copy-Item .env.example .env
+# Replace every placeholder secret in .env first.
+powershell -File scripts/start-stack.ps1
 ```
 
-> Configure secrets via environment variables. See [`.env.example`](./.env.example).
+Open http://localhost:8088. See [deployment documentation](./docs/DEPLOYMENT.md) for HTTPS, backup and rollback guidance.
 
 ---
 
@@ -205,7 +206,7 @@ Base path: `/api`
 
 | Module | Endpoints (selected) |
 |--------|----------------------|
-| Auth | `POST /auth/login` `POST /auth/register` `GET /auth/me` |
+| Auth | `POST /auth/login` `POST /auth/logout` `POST /auth/register` `GET /auth/me` |
 | Departments | `GET/POST/PUT /departments` |
 | Doctors | `GET/POST/PUT /doctors` |
 | Schedules | `GET/POST/PUT /schedules` |
@@ -213,8 +214,9 @@ Base path: `/api`
 | Records | `GET/POST /records` `GET /records/by-appointment/{id}` |
 | Users | `GET /users` `PUT /users/{id}/status` |
 | Stats | `GET /stats/overview` |
+| Health | `GET /health` |
 
-Auth header:
+Browsers authenticate with the HttpOnly `hospital_session` cookie and never persist the JWT in web storage. Non-browser clients may use:
 
 ```http
 Authorization: Bearer <jwt>
@@ -227,6 +229,11 @@ Authorization: Bearer <jwt>
 ```bash
 cd backend
 mvn test
+
+cd ../frontend
+npm run lint
+npm test -- --run
+npm run build
 ```
 
 Core coverage:
@@ -235,6 +242,8 @@ Core coverage:
 - patient data isolation  
 - appointment → EMR completion  
 - admin stats  
+
+For the full verification matrix, see [docs/TESTING.md](./docs/TESTING.md).
 
 ---
 
@@ -268,7 +277,8 @@ Core coverage:
 ## 🔐 Security Notes
 
 - Passwords stored with **BCrypt**
-- Stateless **JWT** authentication
+- Stateless **JWT** authentication through an HttpOnly, SameSite cookie (Bearer remains available for API clients)
+- Login failure throttling and explicit `401` / `403` / `429` responses
 - Role guards on frontend routes & backend APIs
 - Patients/doctors restricted to own data at service layer
 - Secrets externalized (`APP_JWT_SECRET`, datasource envs)
@@ -280,8 +290,17 @@ Core coverage:
 - [ ] Payment / insurance modules  
 - [ ] SMS / email notifications  
 - [ ] Queue / call-number system  
-- [ ] Full-stack Docker Compose (frontend + backend + MySQL)  
+- [x] Full-stack Docker Compose (Nginx + backend + MySQL)
 - [ ] CI pipeline (build + test)
+
+---
+
+## 📚 Delivery Documents
+
+- [API contract](./docs/API.md)
+- [Deployment, backup and rollback](./docs/DEPLOYMENT.md)
+- [Test strategy and cases](./docs/TESTING.md)
+- [Optimization report](./docs/OPTIMIZATION_REPORT.md)
 
 ---
 

@@ -4,7 +4,8 @@ import { Activity } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card } from '@/components/ui/Card'
-import { useAuth, homePathFor } from '@/context/AuthContext'
+import { useAuth } from '@/context/useAuth'
+import { homePathFor, safeRedirectFor } from '@/context/auth-routing'
 
 const demos = [
   { username: 'patient', label: '患者 patient' },
@@ -31,8 +32,7 @@ export function LoginPage() {
     setLoading(true)
     try {
       const u = await login(username, password)
-      const redirect = params.get('redirect')
-      navigate(redirect || homePathFor(u.role), { replace: true })
+      navigate(safeRedirectFor(u.role, params.get('redirect')), { replace: true })
     } catch (err) {
       const msg = err instanceof Error ? err.message : '登录失败'
       setError(
@@ -74,7 +74,7 @@ export function LoginPage() {
               autoComplete="current-password"
             />
             {error ? (
-              <div className="rounded-2xl bg-rose-50 px-3 py-2 text-sm text-rose-600">{error}</div>
+              <div role="alert" className="rounded-2xl bg-rose-50 px-3 py-2 text-sm text-rose-600">{error}</div>
             ) : null}
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? '登录中...' : '登录'}

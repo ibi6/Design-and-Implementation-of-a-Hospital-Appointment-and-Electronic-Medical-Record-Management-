@@ -44,7 +44,7 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
+                        .requestMatchers("/api/health", "/api/auth/login", "/api/auth/register", "/api/auth/logout").permitAll()
                         .requestMatchers("/h2-console/**", "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
@@ -54,13 +54,15 @@ public class SecurityConfig {
                 .headers(h -> h.frameOptions(f -> f.sameOrigin()))
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((req, res, e) -> {
-                            res.setStatus(200);
+                            res.setStatus(401);
                             res.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                            res.setCharacterEncoding("UTF-8");
                             res.getWriter().write(objectMapper.writeValueAsString(ApiResponse.fail(401, "未登录或登录已过期")));
                         })
                         .accessDeniedHandler((req, res, e) -> {
-                            res.setStatus(200);
+                            res.setStatus(403);
                             res.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                            res.setCharacterEncoding("UTF-8");
                             res.getWriter().write(objectMapper.writeValueAsString(ApiResponse.fail(403, "无权限访问")));
                         })
                 )
