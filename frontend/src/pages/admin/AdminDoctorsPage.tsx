@@ -16,7 +16,7 @@ import { errorMessage } from '@/lib/errors'
 const emptyForm = {
   id: '',
   username: '',
-  password: '123456',
+  password: '',
   realName: '',
   phone: '',
   departmentId: '',
@@ -171,12 +171,21 @@ export function AdminDoctorsPage() {
                 label="登录用户名"
                 value={form.username}
                 onChange={(e) => setForm({ ...form, username: e.target.value })}
+                minLength={3}
+                maxLength={32}
+                pattern="[A-Za-z0-9_-]{3,32}"
                 required
               />
               <Input
                 label="初始密码"
+                type="password"
                 value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
+                minLength={6}
+                maxLength={72}
+                autoComplete="new-password"
+                placeholder="请输入 6–72 位初始密码"
+                required
               />
             </>
           ) : null}

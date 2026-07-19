@@ -31,9 +31,11 @@ mybatis-plus:
       logic-not-delete-value: 0
 
 app:
+  demo-data:
+    enabled: ${APP_DEMO_DATA_ENABLED:true}
   jwt:
-    # Override in production via APP_JWT_SECRET (min 32 chars for HS256)
-    secret: ${APP_JWT_SECRET:change-me-hospital-jwt-secret-key-32chars-min}
+    # Development gets an ephemeral secret on each start; production must set APP_JWT_SECRET.
+    secret: ${APP_JWT_SECRET:${random.uuid}${random.uuid}}
     expire-hours: ${APP_JWT_EXPIRE_HOURS:72}
   auth:
     cookie-name: ${APP_AUTH_COOKIE_NAME:hospital_session}

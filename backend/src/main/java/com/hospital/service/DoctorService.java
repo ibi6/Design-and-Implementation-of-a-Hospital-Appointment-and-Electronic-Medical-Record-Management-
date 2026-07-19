@@ -96,14 +96,19 @@ public class DoctorService {
         if (req.getUsername() == null || req.getUsername().isBlank()) {
             throw new BizException("请填写登录用户名");
         }
+        if (req.getPassword() == null || req.getPassword().isBlank()) {
+            throw new BizException("请填写初始密码");
+        }
+        if (req.getPassword().length() < 6 || req.getPassword().length() > 72) {
+            throw new BizException("初始密码须为 6-72 位");
+        }
         Long exists = userMapper.selectCount(new LambdaQueryWrapper<SysUser>()
                 .eq(SysUser::getUsername, req.getUsername().trim()));
         if (exists != null && exists > 0) throw new BizException("用户名已存在");
 
         SysUser user = new SysUser();
         user.setUsername(req.getUsername().trim());
-        user.setPasswordHash(passwordEncoder.encode(
-                req.getPassword() == null || req.getPassword().isBlank() ? "123456" : req.getPassword()));
+        user.setPasswordHash(passwordEncoder.encode(req.getPassword()));
         user.setRealName(req.getRealName());
         user.setPhone(req.getPhone());
         user.setRole("DOCTOR");

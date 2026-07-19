@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
-import { Activity, Bell, LogOut, Menu, Sparkles, X } from 'lucide-react'
+import { Activity, LogOut, Menu, Sparkles, X } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { useAuth } from '@/context/useAuth'
 import { ROLE_LABEL, cn } from '@/lib/utils'
@@ -188,13 +188,6 @@ export function AppShell({
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  className="hidden h-10 w-10 items-center justify-center rounded-2xl border border-slate-200/80 bg-white/80 text-slate-500 shadow-sm transition hover:text-brand-700 sm:inline-flex"
-                  aria-label="通知"
-                >
-                  <Bell className="h-4 w-4" />
-                </button>
                 <span className="rounded-full bg-gradient-to-r from-brand-50 to-cyan-50 px-3 py-1.5 text-xs font-semibold text-brand-800 ring-1 ring-brand-100">
                   {user ? ROLE_LABEL[user.role] : ''}
                 </span>

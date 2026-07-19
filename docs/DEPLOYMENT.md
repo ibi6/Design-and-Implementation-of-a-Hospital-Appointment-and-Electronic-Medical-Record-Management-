@@ -21,12 +21,15 @@ docker compose ps
 | `WEB_PORT` | 否 | 默认 8088 |
 | `MYSQL_PORT` | 否 | 默认 3306，仅本机绑定 |
 | `APP_COOKIE_SECURE` | 生产 HTTPS 是 | HTTPS 部署设为 `true` |
+| `APP_DEMO_DATA_ENABLED` | 否 | 生产保持 `false`，禁止创建演示账号和排班 |
 
 生成密钥：`[Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(48))`。
 
 ## HTTPS
 
 生产必须增加 TLS 终止层，并设置 `APP_COOKIE_SECURE=true`、`APP_COOKIE_SAME_SITE=Lax`。外层代理必须传递 `X-Forwarded-Proto`。
+
+生产 profile 会强制关闭演示数据初始化；即使环境变量误设为 `true`，也不会自动创建 `patient`、`doctor`、`admin` 等演示账号。
 
 ## 健康与日志
 

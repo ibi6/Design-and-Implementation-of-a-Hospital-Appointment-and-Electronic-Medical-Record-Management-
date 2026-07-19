@@ -40,14 +40,30 @@ public class ScheduleService {
 
     @Transactional
     public Dtos.ScheduleVO save(Dtos.ScheduleRequest req) {
-        doctorService.requireEntity(Dtos.parseId(req.getDoctorId()));
+        Long requestedDoctorId = Dtos.parseId(req.getDoctorId());
+        doctorService.requireEntity(requestedDoctorId);
         LocalDateTime now = LocalDateTime.now();
         if (req.getId() != null && !req.getId().isBlank()) {
             Schedule schedule = require(Dtos.parseId(req.getId()));
             if (req.getTotalQuota() < schedule.getReservedCount()) {
                 throw new BizException("号源总数不能小于已预约数");
             }
-            schedule.setDoctorId(Dtos.parseId(req.getDoctorId()));
+            boolean slotChanged = !schedule.getDoctorId().equals(requestedDoctorId)
+                    || !schedule.getWorkDate().equals(req.getWorkDate())
+                    || !schedule.getTimeSlot().equals(req.getTimeSlot());
+            if (schedule.getReservedCount() > 0 && slotChanged) {
+                throw new BizException("已有预约的排班不能修改医生、日期或时段");
+            }
+            Long duplicate = scheduleMapper.selectCount(new LambdaQueryWrapper<Schedule>()
+                    .eq(Schedule::getDoctorId, requestedDoctorId)
+                    .eq(Schedule::getWorkDate, req.getWorkDate())
+                    .eq(Schedule::getTimeSlot, req.getTimeSlot())
+                    .eq(Schedule::getStatus, "ACTIVE")
+                    .ne(Schedule::getId, schedule.getId()));
+            if (duplicate != null && duplicate > 0) {
+                throw new BizException("该医生此时段已有排班");
+            }
+            schedule.setDoctorId(requestedDoctorId);
             schedule.setWorkDate(req.getWorkDate());
             schedule.setTimeSlot(req.getTimeSlot());
             schedule.setTotalQuota(req.getTotalQuota());
@@ -56,14 +72,14 @@ public class ScheduleService {
             return toVO(schedule);
         }
         Long exists = scheduleMapper.selectCount(new LambdaQueryWrapper<Schedule>()
-                .eq(Schedule::getDoctorId, Dtos.parseId(req.getDoctorId()))
+                .eq(Schedule::getDoctorId, requestedDoctorId)
                 .eq(Schedule::getWorkDate, req.getWorkDate())
                 .eq(Schedule::getTimeSlot, req.getTimeSlot())
                 .eq(Schedule::getStatus, "ACTIVE"));
         if (exists != null && exists > 0) throw new BizException("该医生此时段已有排班");
 
         Schedule schedule = new Schedule();
-        schedule.setDoctorId(Dtos.parseId(req.getDoctorId()));
+        schedule.setDoctorId(requestedDoctorId);
         schedule.setWorkDate(req.getWorkDate());
         schedule.setTimeSlot(req.getTimeSlot());
         schedule.setTotalQuota(req.getTotalQuota());

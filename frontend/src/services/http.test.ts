@@ -26,6 +26,37 @@ describe('http', () => {
     expect(new Headers(request.headers).has('Authorization')).toBe(false)
   })
 
+  it('obtains and sends a CSRF token before browser write requests', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            code: 0,
+            message: 'ok',
+            data: { headerName: 'X-XSRF-TOKEN', token: 'csrf-token' },
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ code: 0, message: 'ok', data: { saved: true } }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      )
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(
+      http<{ saved: boolean }>('/api/appointments', { method: 'POST', body: '{}' }),
+    ).resolves.toEqual({ saved: true })
+
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/auth/csrf')
+    const [, request] = fetchMock.mock.calls[1] as [string, RequestInit]
+    expect(new Headers(request.headers).get('X-XSRF-TOKEN')).toBe('csrf-token')
+  })
+
   it('keeps the server envelope message for non-success HTTP responses', async () => {
     vi.stubGlobal(
       'fetch',

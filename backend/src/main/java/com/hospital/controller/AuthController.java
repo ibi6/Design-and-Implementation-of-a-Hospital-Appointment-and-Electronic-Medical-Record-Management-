@@ -7,6 +7,7 @@ import com.hospital.security.AuthCookieService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -15,6 +16,13 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
     private final UserService userService;
     private final AuthCookieService authCookieService;
+
+    public record CsrfResponse(String headerName, String token) {}
+
+    @GetMapping("/csrf")
+    public ApiResponse<CsrfResponse> csrf(CsrfToken token) {
+        return ApiResponse.ok(new CsrfResponse(token.getHeaderName(), token.getToken()));
+    }
 
     @PostMapping("/login")
     public ApiResponse<Dtos.LoginResponse> login(

@@ -85,6 +85,7 @@ public final class Dtos {
     @Data
     public static class DoctorRequest {
         private String id;
+        @Pattern(regexp = "^$|^[A-Za-z0-9_-]{3,32}$", message = "用户名须为 3-32 位字母、数字、下划线或短横线")
         private String username;
         @Pattern(regexp = "^$|^.{6,72}$", message = "密码须为 6-72 位")
         private String password;

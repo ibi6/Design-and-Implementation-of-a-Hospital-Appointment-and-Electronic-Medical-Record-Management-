@@ -60,6 +60,9 @@ public class RecordService {
     }
 
     public Dtos.RecordVO getByAppointment(Long appointmentId) {
+        Appointment appointment = appointmentMapper.selectById(appointmentId);
+        if (appointment == null) throw new BizException("预约不存在");
+        assertCanView(appointment);
         MedicalRecord rec = recordMapper.selectOne(new LambdaQueryWrapper<MedicalRecord>()
                 .eq(MedicalRecord::getAppointmentId, appointmentId));
         if (rec == null) return null;
@@ -114,6 +117,17 @@ public class RecordService {
             if (rec.getDoctorId().equals(me.getId())) return;
         }
         throw new BizException(403, "无权查看该病历");
+    }
+
+    private void assertCanView(Appointment appointment) {
+        SysUser operator = SecurityUtils.requireUser();
+        if ("ADMIN".equals(operator.getRole())) return;
+        if ("PATIENT".equals(operator.getRole()) && appointment.getPatientId().equals(operator.getId())) return;
+        if ("DOCTOR".equals(operator.getRole())) {
+            Doctor me = doctorService.requireByUserId(operator.getId());
+            if (appointment.getDoctorId().equals(me.getId())) return;
+        }
+        throw new BizException(403, "无权查看该预约的病历");
     }
 
     public Dtos.RecordVO toVO(MedicalRecord rec) {

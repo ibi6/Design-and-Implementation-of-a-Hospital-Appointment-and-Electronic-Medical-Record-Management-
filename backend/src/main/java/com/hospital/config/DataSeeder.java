@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.hospital.entity.*;
 import com.hospital.mapper.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -18,6 +19,7 @@ import java.util.List;
 @Component
 @Order(1)
 @RequiredArgsConstructor
+@ConditionalOnProperty(prefix = "app.demo-data", name = "enabled", havingValue = "true")
 public class DataSeeder implements CommandLineRunner {
     private final SysUserMapper userMapper;
     private final DepartmentMapper departmentMapper;

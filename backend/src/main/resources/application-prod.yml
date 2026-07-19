@@ -9,6 +9,8 @@ spring:
       enabled: false
 
 app:
+  demo-data:
+    enabled: false
   jwt:
     secret: ${APP_JWT_SECRET}
   auth:

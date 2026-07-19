@@ -70,7 +70,7 @@
 ### 工程能力
 - 统一响应体 `{ code, message, data }`，并返回真实 HTTP 状态码
 - 全局异常处理与登录失败限流
-- 启动种子数据
+- 本地开发启动演示种子数据（生产 profile 强制关闭）
 - Swagger 文档
 - 环境变量管理密钥（见 `.env.example`）
 
@@ -126,6 +126,8 @@
 - **Node.js 18+**
 - **Maven 3.9+**
 
+> 本地开发和验收不依赖 Docker。项目内置 Maven，可直接使用下方 Windows 脚本；本次验收全程使用 H2、Node.js、JDK 和本机 Maven，未调用 Docker。
+
 ### 1）启动后端
 
 ```bash
@@ -152,9 +154,13 @@ npm run dev
 ```powershell
 powershell -File scripts/start-backend.ps1
 powershell -File scripts/start-frontend.ps1
+# 端口占用时可显式指定，例如：
+powershell -File scripts/start-frontend.ps1 -Port 5188
 ```
 
-### 全栈 Docker Compose
+### 可选：全栈 Docker Compose
+
+仅在 Docker 环境可用时使用；本机开发不需要执行本节。
 
 ```powershell
 Copy-Item .env.example .env
@@ -191,7 +197,7 @@ powershell -File scripts/start-stack.ps1
 
 | 模块 | 主要接口 |
 |------|----------|
-| 认证 | `POST /auth/login` `POST /auth/logout` `POST /auth/register` `GET /auth/me` |
+| 认证 | `GET /auth/csrf` `POST /auth/login` `POST /auth/logout` `POST /auth/register` `GET /auth/me` |
 | 科室 | `GET/POST/PUT /departments` |
 | 医生 | `GET/POST/PUT /doctors` |
 | 排班 | `GET/POST/PUT /schedules` |
@@ -251,10 +257,12 @@ npm run build
 
 - 密码 **BCrypt** 存储
 - 通过 HttpOnly、SameSite Cookie 实现无状态 **JWT** 鉴权，API 客户端仍可使用 Bearer
+- 浏览器写操作使用双提交 CSRF Token；Bearer API 客户端不依赖浏览器 Cookie
 - 登录失败限流及明确的 `401` / `403` / `429` 状态码
 - 前后端角色守卫
 - 患者/医生业务层数据隔离
 - 密钥外置（`APP_JWT_SECRET` 等）
+- 生产 profile 禁止自动创建固定演示账号和滚动演示排班
 
 ---
 

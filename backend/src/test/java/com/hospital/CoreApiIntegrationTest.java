@@ -8,6 +8,7 @@ import com.hospital.entity.Appointment;
 import com.hospital.entity.Schedule;
 import com.hospital.mapper.AppointmentMapper;
 import com.hospital.mapper.ScheduleMapper;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -27,6 +28,7 @@ import java.time.LocalDateTime;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -55,8 +57,27 @@ class CoreApiIntegrationTest {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+    private record CsrfCredentials(Cookie cookie, String token) {}
+
+    private CsrfCredentials csrf() throws Exception {
+        MvcResult result = mockMvc.perform(get("/api/auth/csrf"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.token").isNotEmpty())
+                .andExpect(cookie().exists("XSRF-TOKEN"))
+                .andExpect(cookie().httpOnly("XSRF-TOKEN", false))
+                .andReturn();
+        Cookie cookie = result.getResponse().getCookie("XSRF-TOKEN");
+        assertThat(cookie).isNotNull();
+        String token = body(result).path("data").path("token").asText();
+        return new CsrfCredentials(cookie, token);
+    }
+
     private String login(String username, String password) throws Exception {
+        CsrfCredentials csrf = csrf();
         MvcResult result = mockMvc.perform(post("/api/auth/login")
+                        .cookie(csrf.cookie())
+                        .header("X-XSRF-TOKEN", csrf.token())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"username":"%s","password":"%s"}
@@ -77,7 +98,10 @@ class CoreApiIntegrationTest {
     @Order(1)
     void loginSuccessAndFail() throws Exception {
         login("patient", "123456");
+        CsrfCredentials csrf = csrf();
         mockMvc.perform(post("/api/auth/login")
+                        .cookie(csrf.cookie())
+                        .header("X-XSRF-TOKEN", csrf.token())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"username":"patient","password":"wrong"}
@@ -201,8 +225,11 @@ class CoreApiIntegrationTest {
 
     @Test
     @Order(6)
-    void browserSessionUsesHttpOnlyCookieAndLogoutClearsIt() throws Exception {
+    void browserSessionUsesHttpOnlyCookieAndCsrfProtection() throws Exception {
+        CsrfCredentials csrf = csrf();
         MvcResult loginResult = mockMvc.perform(post("/api/auth/login")
+                        .cookie(csrf.cookie())
+                        .header("X-XSRF-TOKEN", csrf.token())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"username":"patient","password":"123456"}
@@ -220,6 +247,12 @@ class CoreApiIntegrationTest {
                 .andExpect(jsonPath("$.data.username").value("patient"));
 
         mockMvc.perform(post("/api/auth/logout").cookie(sessionCookie))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value(403));
+
+        mockMvc.perform(post("/api/auth/logout")
+                        .cookie(sessionCookie, csrf.cookie())
+                        .header("X-XSRF-TOKEN", csrf.token()))
                 .andExpect(status().isOk())
                 .andExpect(cookie().maxAge("hospital_session", 0));
     }
@@ -235,8 +268,11 @@ class CoreApiIntegrationTest {
     @Test
     @Order(8)
     void repeatedLoginFailuresAreRateLimited() throws Exception {
+        CsrfCredentials csrf = csrf();
         for (int attempt = 1; attempt <= 5; attempt++) {
             mockMvc.perform(post("/api/auth/login")
+                            .cookie(csrf.cookie())
+                            .header("X-XSRF-TOKEN", csrf.token())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content("""
                                     {"username":"rate-limit-probe","password":"wrong-pass"}
@@ -246,6 +282,8 @@ class CoreApiIntegrationTest {
         }
 
         mockMvc.perform(post("/api/auth/login")
+                        .cookie(csrf.cookie())
+                        .header("X-XSRF-TOKEN", csrf.token())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"username":"rate-limit-probe","password":"wrong-pass"}
@@ -263,7 +301,10 @@ class CoreApiIntegrationTest {
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value(403));
 
+        CsrfCredentials csrf = csrf();
         mockMvc.perform(post("/api/auth/register")
+                        .cookie(csrf.cookie())
+                        .header("X-XSRF-TOKEN", csrf.token())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -388,5 +429,132 @@ class CoreApiIntegrationTest {
 
         assertThat(appointmentMapper.completePending(completeProbe.getId())).isEqualTo(1);
         assertThat(appointmentMapper.cancelPending(completeProbe.getId(), LocalDateTime.now())).isZero();
+    }
+
+    @Test
+    @Order(14)
+    void newDoctorRequiresExplicitValidCredentials() throws Exception {
+        String adminToken = login("admin", "123456");
+        String departmentId = body(mockMvc.perform(get("/api/departments")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andReturn()).path("data").get(0).path("id").asText();
+
+        mockMvc.perform(post("/api/doctors")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "username":"doctor_without_password",
+                                  "realName":"测试医生",
+                                  "phone":"13800009991",
+                                  "departmentId":"%s",
+                                  "title":"主治医师",
+                                  "specialty":"常见病诊治",
+                                  "status":"ACTIVE"
+                                }
+                                """.formatted(departmentId)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(400));
+
+        mockMvc.perform(post("/api/doctors")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "username":"x",
+                                  "password":"123456",
+                                  "realName":"测试医生",
+                                  "phone":"13800009992",
+                                  "departmentId":"%s",
+                                  "title":"主治医师",
+                                  "specialty":"常见病诊治",
+                                  "status":"ACTIVE"
+                                }
+                                """.formatted(departmentId)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(400));
+    }
+
+    @Test
+    @Order(15)
+    void recordLookupChecksAppointmentOwnershipEvenWhenNoRecordExists() throws Exception {
+        String patient2Token = login("patient2", "123456");
+        Long patientAppointmentWithoutRecord = jdbcTemplate.queryForObject("""
+                SELECT a.id
+                FROM appointment a
+                LEFT JOIN medical_record r ON r.appointment_id = a.id
+                WHERE a.patient_id = (SELECT id FROM sys_user WHERE username = 'patient')
+                  AND r.id IS NULL
+                LIMIT 1
+                """, Long.class);
+
+        mockMvc.perform(get("/api/records/by-appointment/" + patientAppointmentWithoutRecord)
+                        .header("Authorization", "Bearer " + patient2Token))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value(403));
+    }
+
+    @Test
+    @Order(16)
+    void scheduleUpdateProtectsReservedAndDuplicateSlots() throws Exception {
+        String adminToken = login("admin", "123456");
+        Schedule reserved = scheduleMapper.selectList(new LambdaQueryWrapper<Schedule>()
+                        .gt(Schedule::getReservedCount, 0)
+                        .last("LIMIT 1"))
+                .stream()
+                .findFirst()
+                .orElseThrow();
+
+        mockMvc.perform(put("/api/schedules/" + reserved.getId())
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "doctorId":"%s",
+                                  "workDate":"%s",
+                                  "timeSlot":"%s",
+                                  "totalQuota":%d
+                                }
+                                """.formatted(
+                                        reserved.getDoctorId(),
+                                        reserved.getWorkDate().plusYears(20),
+                                        reserved.getTimeSlot(),
+                                        reserved.getTotalQuota())))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(400));
+
+        LocalDate duplicateDate = LocalDate.now().plusYears(25);
+        Schedule source = schedule(reserved.getDoctorId(), duplicateDate, "MORNING");
+        Schedule target = schedule(reserved.getDoctorId(), duplicateDate.plusDays(1), "MORNING");
+        scheduleMapper.insert(source);
+        scheduleMapper.insert(target);
+
+        mockMvc.perform(put("/api/schedules/" + source.getId())
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "doctorId":"%s",
+                                  "workDate":"%s",
+                                  "timeSlot":"MORNING",
+                                  "totalQuota":10
+                                }
+                                """.formatted(source.getDoctorId(), target.getWorkDate())))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(400));
+    }
+
+    private Schedule schedule(Long doctorId, LocalDate workDate, String timeSlot) {
+        Schedule schedule = new Schedule();
+        schedule.setDoctorId(doctorId);
+        schedule.setWorkDate(workDate);
+        schedule.setTimeSlot(timeSlot);
+        schedule.setTotalQuota(10);
+        schedule.setReservedCount(0);
+        schedule.setStatus("ACTIVE");
+        schedule.setCreatedAt(LocalDateTime.now());
+        schedule.setUpdatedAt(LocalDateTime.now());
+        return schedule;
     }
 }

@@ -22,12 +22,13 @@ npm test -- --run
 npm run build
 ```
 
-测试覆盖 HTTP Cookie 会话、错误响应、可访问 Modal、触控尺寸和异步错误重试状态。
+测试覆盖 HTTP Cookie/CSRF 会话、错误响应、可访问 Modal、触控尺寸和异步错误重试状态。
 
 ## 认证与安全
 
 - 浏览器使用后端设置的 HttpOnly、SameSite `hospital_session` Cookie。
 - 请求统一使用 `credentials: include`，JWT 不写入 `localStorage` 或 `sessionStorage`。
+- POST/PUT/DELETE 等浏览器写操作会先获取 CSRF Token 并自动写入请求头。
 - 前端路由守卫用于用户体验；最终权限仍由后端角色和数据归属校验决定。
 - 开发环境通过 Vite 同源代理访问 API；生产环境由 Nginx 反向代理 `/api`。
 
